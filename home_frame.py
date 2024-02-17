@@ -13,7 +13,7 @@ class HomeFrame(CTkFrame):
         self.logo2_image = CTkImage(
             Image.open("src/student-registration.png"), size=(40, 40)
         )
-        self.logo3_image = CTkImage(Image.open("src/binary.png"), size=(40, 40))
+        self.logo3_image = CTkImage(Image.open("src/list.png"), size=(40, 40))
         self.logo4_image = CTkImage(Image.open("src/face-id.png"), size=(40, 40))
 
         self.button_add_student = CTkButton(
@@ -28,17 +28,6 @@ class HomeFrame(CTkFrame):
         )
         self.button_add_student.place(relx=0.5, rely=0.2, relwidth=0.3, anchor="center")
 
-        self.button_save_data = CTkButton(
-            self,
-            command=lambda: self.parent.show_frame(self.parent.train_data_frame),
-            text="  Save Face Data",
-            image=self.logo3_image,
-            corner_radius=5,
-            font=("Arial", 20, "bold"),
-            width=200,
-            height=50,
-        )
-        self.button_save_data.place(relx=0.5, rely=0.35, relwidth=0.3, anchor="center")
 
         self.button_attendance = CTkButton(
             self,
@@ -50,8 +39,20 @@ class HomeFrame(CTkFrame):
             width=200,
             height=50,
         )
-        self.button_attendance.place(relx=0.5, rely=0.5, relwidth=0.3, anchor="center")
+        self.button_attendance.place(relx=0.5, rely=0.35, relwidth=0.3, anchor="center")
 
+        self.button_student_data = CTkButton(
+            self,
+            command=lambda: self.parent.show_frame(self.parent.student_data_frame),
+            text="  Student Data     ",
+            image=self.logo3_image,
+            corner_radius=5,
+            font=("Arial", 20, "bold"),
+            width=200,
+            height=50,
+        )
+        self.button_student_data.place(relx=0.5, rely=0.5, relwidth=0.3, anchor="center")
+        
         # Frame as a container for label and combobox
         self.camera_selection_container = CTkLabel(self, text="", width=260)
         self.camera_selection_container.place(relx=0.5, rely=0.65, anchor="center")

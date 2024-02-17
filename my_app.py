@@ -5,21 +5,23 @@ from add_student_frame import AddStudentFrame
 from attendance_frame import AttendanceFrame
 from database import Database
 from home_frame import HomeFrame
-from train_data_frame import TrainDataFrame
-
+from student_data_frame import StudentDataFrame
 
 class MyApp(CTk):
     def __init__(self):
         super().__init__()
-        self.db = Database(
-            host="localhost", user="root", passwd="8258", database="face recognizer"
-        )
+        self.connect_db()
         self.title("FaceAttendanceSystem")
         self.geometry("900x600")
         self.minsize(900, 600)
         self.create_widgets()
         self.show_frame(self.home_frame)
-
+        
+    def connect_db(self):
+        self.db = Database(
+            host="69.57.172.25", user="creativecollege_face_recognizer", passwd="face_recognizer", database="creativecollege_face_recognizer"
+        ) 
+    
     def create_widgets(self):
         self.logo1_image = CTkImage(Image.open("src/checked-user.png"), size=(50, 50))
         self.back_button_image = CTkImage(Image.open("src/back.png"), size=(50, 50))
@@ -51,8 +53,8 @@ class MyApp(CTk):
         # Initialize frames
         self.home_frame = HomeFrame(self)
         self.add_student_frame = AddStudentFrame(self, self.db)
-        self.train_data_frame = TrainDataFrame(self)
         self.attendance_frame = AttendanceFrame(self)
+        self.student_data_frame = StudentDataFrame(self)
 
     def show_frame(self, frame_to_show: CTkFrame):
         for widget in self.winfo_children():

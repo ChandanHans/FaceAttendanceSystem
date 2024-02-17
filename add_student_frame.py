@@ -2,6 +2,7 @@ import os
 import pickle
 import shutil
 import threading
+from time import sleep
 import cv2
 import json
 import tkinter as tk
@@ -10,7 +11,7 @@ from tkinter import ttk
 import face_recognition
 from customtkinter import *
 from database import Database
-from CTkMessagebox import CTkMessagebox
+# from CTkMessagebox import CTkMessagebox
 
 
 class AddStudentFrame(CTkFrame):
@@ -82,6 +83,7 @@ class AddStudentFrame(CTkFrame):
         self.status_label.place_forget()
 
     def start_camera(self):
+        self.status_label.place_forget()
         roll = self.roll_entry.get().strip()
         name = self.name_entry.get().strip()
         cource = self.course_entry.get()
@@ -91,7 +93,7 @@ class AddStudentFrame(CTkFrame):
         else:
             self.submit_button.configure(state=DISABLED)
             self.show_camera_frame.start_camera()
-        self.status_label.place(relx=0.5, rely=0.75, anchor="center")
+        
 
     def add_student(self):
         roll = self.roll_entry.get().strip()
@@ -164,17 +166,23 @@ class ShowCameraFrame(CTkFrame):
     def camera_thread(self):
         self.frame_count = 0
         while self.running:
-            print(self.running)
             ret, frame = self.cap.read()
             if not ret:
                 break
-            self.process_frame(frame)
-            self.after(10, lambda: self.update_frame(frame))
-            if self.frame_count >= 10:
-                self.stop_camera()
+            processed_frame = self.process_frame(frame)
+            self.after(10, lambda: self.update_frame(processed_frame))
+            if self.frame_count >= 100:
                 self.parent.add_student()
+                break
         if self.cap is not None:
             self.cap.release()
+        if self.frame_count < 100:
+            shutil.rmtree(self.student_folder_path)
+            self.parent.status_label.configure(image=self.parent.cancel_logo)
+        self.start = False
+        self.delete_widgets()
+        self.parent.student_table_frame.show_data()
+        self.parent.status_label.place(relx=0.5, rely=0.75, anchor="center")
 
     def process_frame(self, frame: cv2.typing.MatLike):
         face_locations = face_recognition.face_locations(frame)
@@ -207,7 +215,7 @@ class ShowCameraFrame(CTkFrame):
             elif len(face_locations) > 1:
                 top, right, bottom, left = face_location
                 cv2.rectangle(frame, (left, top), (right, bottom), (255, 0, 0), 2)
-
+        return frame
 
     def update_frame(self, frame):
         try:
@@ -233,9 +241,6 @@ class ShowCameraFrame(CTkFrame):
         
     def stop_camera(self):
         self.running = False
-        if self.camera_process_thread.is_alive():
-            self.camera_process_thread.join()
-        self.delete_widgets()
 
     def get_camera_choice(self):
         with open("choice.json", "r") as f:
@@ -352,19 +357,13 @@ class StudentTableFrame(CTkFrame):
         self.tree.heading("Sem", text="Sem", anchor=tk.W)
 
     def remove_data(self):
-        CTkMessagebox(
-            title="Delete",
-            message="Do your realy want to delete the selected row ?",
-            icon="question",
-            option_1="No",
-            option_2="Yes",
-            height=100,
-            width=300,
-        )
         for selected_item in self.tree.selection():
             roll = self.tree.item(selected_item)["values"][0]
             self.db.execute_query("DELETE FROM Students WHERE roll = %s;", (roll,))
-            shutil.rmtree(f"{os.getcwd()}/Student_Face/{roll}")
+            try:
+                shutil.rmtree(f"{os.getcwd()}/Student_Face/{roll}")
+            except Exception:
+                pass
             try:
                 with open("known_faces.pkl", "rb") as file:
                     previous_data: dict = pickle.load(file)
@@ -373,7 +372,7 @@ class StudentTableFrame(CTkFrame):
                     pickle.dump(previous_data, file)
             except:
                 pass
-        self.show_data()
+        self.after(10, lambda: self.show_data())
 
     def get_filter_data(self):
         course = self.filter_course_entry.get()

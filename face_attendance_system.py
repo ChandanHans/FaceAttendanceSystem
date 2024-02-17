@@ -7,7 +7,7 @@ from database import Database
 from home_frame import HomeFrame
 from student_data_frame import StudentDataFrame
 
-class MyApp(CTk):
+class FaceAttendanceSystem(CTk):
     def __init__(self):
         super().__init__()
         self.connect_db()
@@ -64,5 +64,5 @@ class MyApp(CTk):
 
 
 if __name__ == "__main__":
-    app = MyApp()
+    app = FaceAttendanceSystem()
     app.mainloop()

@@ -152,16 +152,19 @@ class HomeFrame(CTkFrame):
                 data : dict = pickle.load(file)
         except:
             data = {}
-        student_folders = os.listdir("./Student_Face")
-        total = len(student_folders)
-        loading_animation = LoadingAnimation(self.parent)
-        for index,folder in enumerate(student_folders):
-            time.sleep(0.2)
-            loading_animation.change_text(f"{index+1}/{total}")
-            if folder not in data:
-                data[folder] = self.process_folder(folder)
-        with open("known_faces.pkl", "wb") as file:
-            pickle.dump(data, file)
+        try:
+            student_folders = os.listdir("./Student_Face")
+            total = len(student_folders)
+            loading_animation = LoadingAnimation(self.parent)
+            for index,folder in enumerate(student_folders):
+                time.sleep(0.2)
+                loading_animation.change_text(f"{index+1}/{total}")
+                if folder not in data:
+                    data[folder] = self.process_folder(folder)
+            with open("known_faces.pkl", "wb") as file:
+                pickle.dump(data, file)
+        except FileNotFoundError:
+            showwarning("Warning", "Please add some student face data.")
         time.sleep(2)
         loading_animation.stop()
         for widget in self.winfo_children():

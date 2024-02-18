@@ -8,3 +8,4 @@
 /one
 /__pycache__
 /.vscode
+/known_faces.pkl

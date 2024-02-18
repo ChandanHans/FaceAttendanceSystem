@@ -11,8 +11,7 @@ from tkinter import ttk
 import face_recognition
 from customtkinter import *
 from database import Database
-# from CTkMessagebox import CTkMessagebox
-
+from utility import *
 
 class AddStudentFrame(CTkFrame):
     def __init__(self, parent, db: Database, **kwargs):
@@ -243,8 +242,7 @@ class ShowCameraFrame(CTkFrame):
         self.running = False
 
     def get_camera_choice(self):
-        with open("choice.json", "r") as f:
-            return int(json.load(f)[0])
+        return int(get_config()["CHOICE"][0])
 
 
 class StudentTableFrame(CTkFrame):
@@ -257,7 +255,7 @@ class StudentTableFrame(CTkFrame):
 
     def create_widgets(self):
         # Frame for filter options
-        self.trash_logo = CTkImage(Image.open("src/delete.png"), size=(30, 30))
+        self.trash_logo = CTkImage(Image.open(resource_path("src/delete.png")), size=(30, 30))
         self.filter_frame = CTkFrame(self, fg_color="#B188A8", corner_radius=3)
         self.filter_frame.pack(side="top", fill="x", padx=6, pady=(6, 1))
 

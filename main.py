@@ -7,6 +7,10 @@ from database import Database
 from home_frame import HomeFrame
 from student_data_frame import StudentDataFrame
 
+from utility import *
+
+config = get_config()
+
 class FaceAttendanceSystem(CTk):
     def __init__(self):
         super().__init__()
@@ -15,16 +19,16 @@ class FaceAttendanceSystem(CTk):
         self.geometry("900x600")
         self.minsize(900, 600)
         self.create_widgets()
-        self.show_frame(self.home_frame)
+        self.after(10,self.show_frame(self.home_frame))
         
     def connect_db(self):
         self.db = Database(
-            host="69.57.172.25", user="creativecollege_face_recognizer", passwd="face_recognizer", database="creativecollege_face_recognizer"
+            host = config['HOST'], user = config['USER'], passwd = config['PASSWD'], database = config['DB']
         ) 
     
     def create_widgets(self):
-        self.logo1_image = CTkImage(Image.open("src/checked-user.png"), size=(50, 50))
-        self.back_button_image = CTkImage(Image.open("src/back.png"), size=(50, 50))
+        self.logo1_image = CTkImage(Image.open(resource_path("src/checked-user.png")), size=(50, 50))
+        self.back_button_image = CTkImage(Image.open(resource_path("src/back.png")), size=(50, 50))
         self.title_label = CTkLabel(
             master=self,
             text="FaceAttendanceSystem",

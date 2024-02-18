@@ -10,7 +10,7 @@ def resource_path(relative_path):
         os.path.abspath(__file__)))
     return os.path.join(base_path, relative_path)
 
-config_path = resource_path('config.json')
+config_path = 'config.json'
 
 def is_valid_config(data):
     # Define the keys you expect in the configuration and their types

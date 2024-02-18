@@ -9,3 +9,5 @@
 /__pycache__
 /.vscode
 /known_faces.pkl
+/output
+/kk.json

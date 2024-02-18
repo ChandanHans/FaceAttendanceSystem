@@ -70,8 +70,8 @@ class AddStudentFrame(CTkFrame):
         self.student_table_frame = StudentTableFrame(self, self.db)
         self.student_table_frame.place(relx=0.4, rely=0, relwidth=0.6, relheight=1)
 
-        self.ok_logo = CTkImage(Image.open("src/ok.png"), size=(30, 30))
-        self.cancel_logo = CTkImage(Image.open("src/cancel.png"), size=(30, 30))
+        self.ok_logo = CTkImage(Image.open(resource_path("src/ok.png")), size=(30, 30))
+        self.cancel_logo = CTkImage(Image.open(resource_path("src/cancel.png")), size=(30, 30))
         self.status_label = CTkLabel(
             self.ask_data_frame, text="", fg_color="transparent"
         )

@@ -95,7 +95,7 @@ class AddStudentFrame(CTkFrame):
         
 
     def add_student(self):
-        roll = self.roll_entry.get().strip()
+        roll = (self.roll_entry.get().strip()).upper()
         name = self.name_entry.get().strip()
         cource = self.course_entry.get()
         sem = self.sem_entry.get()
@@ -356,7 +356,7 @@ class StudentTableFrame(CTkFrame):
 
     def remove_data(self):
         for selected_item in self.tree.selection():
-            roll = self.tree.item(selected_item)["values"][0]
+            roll = self.tree.item(selected_item)["values"][0].upper()
             self.db.execute_query("DELETE FROM Students WHERE roll = %s;", (roll,))
             try:
                 shutil.rmtree(f"{os.getcwd()}/Student_Face/{roll}")
@@ -368,7 +368,7 @@ class StudentTableFrame(CTkFrame):
                 previous_data.pop(roll)
                 with open("known_faces.pkl", "wb") as file:
                     pickle.dump(previous_data, file)
-            except:
+            except Exception:
                 pass
         self.after(10, lambda: self.show_data())
 

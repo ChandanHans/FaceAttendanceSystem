@@ -54,8 +54,7 @@ def get_config():
             print(f"A sample configuration file has been created at {config_path}. Please fill it out.")
         elif isinstance(e, ValueError):
             showwarning("Warning", "Invalid configuration format. Please check the configuration file.")
-
-        return None
+        sys.exit()
     
 def update_choice(new_choice):
     with open(config_path, 'r') as file:

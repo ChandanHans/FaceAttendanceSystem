@@ -25,7 +25,7 @@ class AttendanceFrame(CTkFrame):
         self.image_label.pack(padx=6, pady=6, fill="both")
         self.cap = cv2.VideoCapture(self.get_camera_choice())
         self.running = True
-        self.camera_process_thread = threading.Thread(target=self.camera_thread)
+        self.camera_process_thread = threading.Thread(target=self.camera_thread, daemon=True)
         self.camera_process_thread.start()
         
         
@@ -62,7 +62,11 @@ class AttendanceFrame(CTkFrame):
                 if self.prediction(self.known_face[roll],face_encoding):
                     name = self.all_student_data[roll]
                     self.mark_present(roll)
-                    cv2.putText(frame, name, (left + 6, bottom - 6), cv2.FONT_HERSHEY_PLAIN, 0.5, (0, 0, 0), 1)
+                    # Set font face
+                    font = cv2.FONT_HERSHEY_SIMPLEX
+                    # Put text on the frame
+                    cv2.putText(frame, name, (left, bottom - 6), font, 0.5, (0, 0, 0), 1)
+
             cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
         return frame
     

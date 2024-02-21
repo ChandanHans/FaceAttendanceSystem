@@ -12,21 +12,23 @@ class Database:
         self.conn = mysql.connector.connect(
             host=self.host, user=self.user, passwd=self.passwd, database=self.database
         )
-        self.cursor = self.conn.cursor()
 
     def fetch_data(self, query, params=()):
         """Fetch data from the database using a SELECT query."""
         if self.conn is None:
             self.connect()
-        self.cursor.execute(query, params)
-        return self.cursor.fetchall()
+        with self.conn.cursor() as cursor:
+            cursor.execute(query, params)
+            result = cursor.fetchall()
+        return result
 
     def execute_query(self, query, params=()):
         """Execute a given SQL query (INSERT, UPDATE, DELETE) and return True if successful."""
         if self.conn is None:
             self.connect()
         try:
-            self.cursor.execute(query, params)
+            with self.conn.cursor() as cursor:
+                cursor.execute(query, params)
             self.conn.commit()
             return True  # Indicates that the query and commit were successful
         except Exception as e:

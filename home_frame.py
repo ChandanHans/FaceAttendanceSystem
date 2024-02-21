@@ -5,8 +5,10 @@ from threading import Thread
 import time
 from customtkinter import *
 from PIL import Image
+
 import face_recognition
 from loading_animation import LoadingAnimation
+
 from utility import *
 
 class HomeFrame(CTkFrame):
@@ -50,7 +52,7 @@ class HomeFrame(CTkFrame):
         
         self.button_attendance = CTkButton(
             self,
-            command=lambda: self.parent.show_frame(self.parent.attendance_frame),
+            command=lambda : self.parent.take_attendance(),
             text="  Attendance        ",
             image=self.logo4_image,
             corner_radius=5,
@@ -161,8 +163,8 @@ class HomeFrame(CTkFrame):
                 loading_animation.change_text(f"{index+1}/{total}")
                 if folder not in data:
                     data[folder] = self.process_folder(folder)
-            with open("known_faces.pkl", "wb") as file:
-                pickle.dump(data, file)
+                with open("known_faces.pkl", "wb") as file:
+                    pickle.dump(data, file)
         except FileNotFoundError:
             showwarning("Warning", "Please add some student face data.")
         time.sleep(2)

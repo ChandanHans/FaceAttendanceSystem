@@ -2,9 +2,7 @@ import os
 import pickle
 import shutil
 import threading
-from time import sleep
 import cv2
-import json
 import tkinter as tk
 from PIL import Image
 from tkinter import ttk
@@ -64,7 +62,7 @@ class AddStudentFrame(CTkFrame):
         self.submit_button.place(relx=0.5, rely=0.87, anchor="center")
 
         #  camera_frame
-        self.show_camera_frame = ShowCameraFrame(self, 1)
+        self.show_camera_frame = ShowCameraFrame(self)
         self.show_camera_frame.place(relx=0, rely=0.5, relwidth=0.4, relheight=0.5)
 
         self.student_table_frame = StudentTableFrame(self, self.db)
@@ -120,10 +118,9 @@ class AddStudentFrame(CTkFrame):
 
 
 class ShowCameraFrame(CTkFrame):
-    def __init__(self, parent: AddStudentFrame, camera_index, **kwargs):
+    def __init__(self, parent: AddStudentFrame, **kwargs):
         super().__init__(parent, **kwargs)
         self.parent = parent
-        self.camera_index = camera_index
         self.cap = None
         self.running = False
         self.frame_count = 0
@@ -218,10 +215,12 @@ class ShowCameraFrame(CTkFrame):
 
     def update_frame(self, frame):
         try:
+            image_height = self.winfo_height()
+            image_width = self.winfo_width()
             cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
             img = Image.fromarray(cv2image)
             imgtk = CTkImage(
-                img, size=(self.image_label.winfo_width(), self.image_label.winfo_height())
+                img, size=(image_width, image_height)
             )
             self.image_label.configure(image=imgtk)
         except:
@@ -249,13 +248,13 @@ class StudentTableFrame(CTkFrame):
     def __init__(self, parent, db: Database, **kwargs):
         super().__init__(parent, **kwargs)
         self.db = db
+        self.trash_logo = CTkImage(Image.open(resource_path("src/delete.png")), size=(30, 30))
         self.configure(border_width=4, border_color="#5665EF", corner_radius=0)
         self.create_widgets()
         self.show_data()
 
     def create_widgets(self):
         # Frame for filter options
-        self.trash_logo = CTkImage(Image.open(resource_path("src/delete.png")), size=(30, 30))
         self.filter_frame = CTkFrame(self, fg_color="#B188A8", corner_radius=3)
         self.filter_frame.pack(side="top", fill="x", padx=6, pady=(6, 1))
 
@@ -356,7 +355,7 @@ class StudentTableFrame(CTkFrame):
 
     def remove_data(self):
         for selected_item in self.tree.selection():
-            roll = self.tree.item(selected_item)["values"][0].upper()
+            roll = str(self.tree.item(selected_item)["values"][0]).upper()
             self.db.execute_query("DELETE FROM Students WHERE roll = %s;", (roll,))
             try:
                 shutil.rmtree(f"{os.getcwd()}/Student_Face/{roll}")
@@ -390,7 +389,7 @@ class StudentTableFrame(CTkFrame):
                 conditions.append("sem = %s")
                 params.append(sem)
 
-            query = base_query + " WHERE " + " AND ".join(conditions)
+            query = base_query + " WHERE AND ".join(conditions)
         query += " ORDER BY roll"
         return self.db.fetch_data(query, params)
 

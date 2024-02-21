@@ -57,15 +57,20 @@ class FaceAttendanceSystem(CTk):
         # Initialize frames
         self.home_frame = HomeFrame(self)
         self.add_student_frame = AddStudentFrame(self, self.db)
-        self.attendance_frame = AttendanceFrame(self)
-        self.student_data_frame = StudentDataFrame(self)
+        self.attendance_frame = AttendanceFrame(self, self.db)
+        self.student_data_frame = StudentDataFrame(self, self.db)
 
     def show_frame(self, frame_to_show: CTkFrame):
         for widget in self.winfo_children():
             if widget != self.title_label:
                 widget.pack_forget()
+        if self.attendance_frame.running:
+            self.attendance_frame.stop()
         frame_to_show.pack(fill="both", expand=True)
 
+    def take_attendance(self):
+        self.show_frame(self.attendance_frame)
+        self.attendance_frame.take_attendance()
 
 if __name__ == "__main__":
     app = FaceAttendanceSystem()

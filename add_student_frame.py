@@ -11,6 +11,7 @@ from customtkinter import *
 from database import Database
 from utility import *
 
+
 class AddStudentFrame(CTkFrame):
     def __init__(self, parent, db: Database, **kwargs):
         super().__init__(parent, **kwargs)
@@ -69,7 +70,9 @@ class AddStudentFrame(CTkFrame):
         self.student_table_frame.place(relx=0.4, rely=0, relwidth=0.6, relheight=1)
 
         self.ok_logo = CTkImage(Image.open(resource_path("src/ok.png")), size=(30, 30))
-        self.cancel_logo = CTkImage(Image.open(resource_path("src/cancel.png")), size=(30, 30))
+        self.cancel_logo = CTkImage(
+            Image.open(resource_path("src/cancel.png")), size=(30, 30)
+        )
         self.status_label = CTkLabel(
             self.ask_data_frame, text="", fg_color="transparent"
         )
@@ -90,7 +93,6 @@ class AddStudentFrame(CTkFrame):
         else:
             self.submit_button.configure(state=DISABLED)
             self.show_camera_frame.start_camera()
-        
 
     def add_student(self):
         roll = (self.roll_entry.get().strip()).upper()
@@ -126,7 +128,7 @@ class ShowCameraFrame(CTkFrame):
         self.frame_count = 0
         self.start = False
         self.configure(border_width=4, border_color="#5665EF", corner_radius=0)
-        
+
     def create_widgets(self):
         self.button_frame = CTkLabel(self, text="", height=30)
         self.button_frame.pack(fill="x", padx=6, pady=6, side="bottom")
@@ -143,8 +145,7 @@ class ShowCameraFrame(CTkFrame):
 
         self.image_label = CTkLabel(self, text="")
         self.image_label.pack(padx=6, pady=(6, 0), fill="both")
-    
-    
+
     def start_camera(self):
         self.create_widgets()
         self.student_folder_path = "Student_Face/" + str(
@@ -157,7 +158,6 @@ class ShowCameraFrame(CTkFrame):
         self.running = True
         self.camera_process_thread = threading.Thread(target=self.camera_thread)
         self.camera_process_thread.start()
-
 
     def camera_thread(self):
         self.frame_count = 0
@@ -219,16 +219,14 @@ class ShowCameraFrame(CTkFrame):
             image_width = self.winfo_width()
             cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
             img = Image.fromarray(cv2image)
-            imgtk = CTkImage(
-                img, size=(image_width, image_height)
-            )
+            imgtk = CTkImage(img, size=(image_width, image_height))
             self.image_label.configure(image=imgtk)
         except:
             pass
 
     def save_face(self):
         self.start = True
-        
+
     def delete_widgets(self):
         if self.cap is not None:
             self.cap.release()
@@ -236,7 +234,7 @@ class ShowCameraFrame(CTkFrame):
         self.image_label.pack_forget()
         self.button_frame.pack_forget()
         self.parent.submit_button.configure(state="normal")
-        
+
     def stop_camera(self):
         self.running = False
 
@@ -248,7 +246,9 @@ class StudentTableFrame(CTkFrame):
     def __init__(self, parent, db: Database, **kwargs):
         super().__init__(parent, **kwargs)
         self.db = db
-        self.trash_logo = CTkImage(Image.open(resource_path("src/delete.png")), size=(30, 30))
+        self.trash_logo = CTkImage(
+            Image.open(resource_path("src/delete.png")), size=(30, 30)
+        )
         self.configure(border_width=4, border_color="#5665EF", corner_radius=0)
         self.create_widgets()
         self.show_data()
@@ -374,24 +374,18 @@ class StudentTableFrame(CTkFrame):
     def get_filter_data(self):
         course = self.filter_course_entry.get()
         sem = self.filter_sem_entry.get()
-        base_query = "SELECT * FROM Students"
-
-        params = ()
-        if course == "ALL" and sem == "ALL":
-            query = base_query
-        else:
-            conditions = []
-            params = []
-            if course != "ALL":
-                conditions.append("course = %s")
-                params.append(course)
-            if sem != "ALL":
-                conditions.append("sem = %s")
-                params.append(sem)
-
-            query = base_query + " WHERE AND ".join(conditions)
-        query += " ORDER BY roll"
-        return self.db.fetch_data(query, params)
+        query = f"""
+        SELECT 
+            * 
+        FROM 
+            students 
+        WHERE 
+            course LIKE '{"%" if course == "ALL" else course}'
+            AND 
+            sem LIKE '{"%" if sem == "ALL" else sem}'
+        ORDER BY 
+            roll"""
+        return self.db.fetch_data(query)
 
     def clear_tree(self):
         for item in self.tree.get_children():

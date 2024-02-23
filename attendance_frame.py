@@ -77,7 +77,7 @@ class AttendanceFrame(CTkFrame):
         return int(get_config()["CHOICE"][0])
     
     def get_all_student_data(self):
-        query = "SELECT Roll,SName FROM Students;"
+        query = "SELECT Roll,SName FROM students;"
         data = self.db.fetch_data(query)
         return dict(data)
     
@@ -94,7 +94,7 @@ class AttendanceFrame(CTkFrame):
             return {}
     
     @staticmethod
-    def prediction(known_face_encodings, face_encoding_to_check, tolerance = 0.4, threshold = 70):
+    def prediction(known_face_encodings, face_encoding_to_check, tolerance = 0.45, threshold = 70):
         guess = sum(face_recognition.compare_faces(known_face_encodings,face_encoding_to_check, tolerance))
         print(guess)
         if guess > threshold:

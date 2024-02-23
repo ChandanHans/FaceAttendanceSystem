@@ -80,15 +80,19 @@ class AddStudentFrame(CTkFrame):
         self.entry2.trace_add("write", self.on_entry_update)
 
     def on_entry_update(self, *args):
+        self.student_table_frame.show_data(
+            name=self.name_entry.get(),
+            roll=self.roll_entry.get()
+        )
         self.status_label.place_forget()
 
     def start_camera(self):
         self.status_label.place_forget()
         roll = self.roll_entry.get().strip()
         name = self.name_entry.get().strip()
-        cource = self.course_entry.get()
+        course = self.course_entry.get()
         sem = self.sem_entry.get()
-        if roll == "" or name == "" or cource == "" or sem == "":
+        if roll == "" or name == "" or course == "" or sem == "":
             self.status_label.configure(image=self.cancel_logo)
         else:
             self.submit_button.configure(state=DISABLED)
@@ -97,14 +101,14 @@ class AddStudentFrame(CTkFrame):
     def add_student(self):
         roll = (self.roll_entry.get().strip()).upper()
         name = self.name_entry.get().strip()
-        cource = self.course_entry.get()
+        course = self.course_entry.get()
         sem = self.sem_entry.get()
         success = self.db.execute_query(
-            """INSERT INTO Students (Roll, SName, Course, Sem)
+            """INSERT INTO students (Roll, SName, Course, Sem)
                 VALUES (%s, %s, %s, %s)
                 ON DUPLICATE KEY UPDATE
                 SName = VALUES(SName), Course = VALUES(Course), Sem = VALUES(Sem);""",
-            (roll, name, cource, sem),
+            (roll, name, course, sem),
         )
 
         if success:
@@ -356,7 +360,7 @@ class StudentTableFrame(CTkFrame):
     def remove_data(self):
         for selected_item in self.tree.selection():
             roll = str(self.tree.item(selected_item)["values"][0]).upper()
-            self.db.execute_query("DELETE FROM Students WHERE roll = %s;", (roll,))
+            self.db.execute_query("DELETE FROM students WHERE roll = %s;", (roll,))
             try:
                 shutil.rmtree(f"{os.getcwd()}/Student_Face/{roll}")
             except Exception:
@@ -369,30 +373,36 @@ class StudentTableFrame(CTkFrame):
                     pickle.dump(previous_data, file)
             except Exception:
                 pass
-        self.after(10, lambda: self.show_data())
-
-    def get_filter_data(self):
-        course = self.filter_course_entry.get()
-        sem = self.filter_sem_entry.get()
-        query = f"""
-        SELECT 
-            * 
-        FROM 
-            students 
-        WHERE 
-            course LIKE '{"%" if course == "ALL" else course}'
-            AND 
-            sem LIKE '{"%" if sem == "ALL" else sem}'
-        ORDER BY 
-            roll"""
-        return self.db.fetch_data(query)
+        self.after(10, self.show_data)
 
     def clear_tree(self):
         for item in self.tree.get_children():
             self.tree.delete(item)
 
-    def show_data(self, *args):
-        data = self.get_filter_data()
+    def show_data(self, *args, **kwargs):
+        # Extracting keyword arguments with default values
+        name = kwargs.get('name', '')
+        roll = kwargs.get('roll', '')
+        course = self.filter_course_entry.get()
+        sem = self.filter_sem_entry.get()
+        
+        # Construct the basic query
+        query = f"""
+SELECT 
+    * 
+FROM 
+    students 
+WHERE 
+    1=1
+    AND sname LIKE "{name}%"
+    AND roll LIKE "{roll}%"
+    AND course LIKE "{'' if course == 'ALL' else course}%"
+    AND sem LIKE "{'' if sem == 'ALL' else sem}%"
+ORDER BY
+    roll
+"""
+        data = self.db.fetch_data(query)
+
         self.clear_tree()
         for row in data:
             self.tree.insert("", "end", values=row)

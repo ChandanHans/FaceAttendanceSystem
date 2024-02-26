@@ -16,6 +16,7 @@ class HomeFrame(CTkFrame):
         super().__init__(parent, **kwargs)
         self.parent = parent
         self.init_ui()
+        
 
     def init_ui(self):
         # Load images
@@ -76,7 +77,7 @@ class HomeFrame(CTkFrame):
         
         # Frame as a container for label and combobox
         self.camera_selection_container = CTkLabel(self, text="", width=260)
-        self.camera_selection_container.place(relx=0.5, rely=0.58, anchor="center")
+        self.camera_selection_container.place(relx=0.5, rely=0.68, anchor="center")
 
         # ComboBox for camera selection inside the container
         self.camera_selection = CTkComboBox(
@@ -97,15 +98,6 @@ class HomeFrame(CTkFrame):
         )
         self.camera_selection_label.place(x=80, y=0)
 
-        # Checkboxes for options
-        self.checkbox_show_camera = CTkCheckBox(
-            self,
-            command=lambda: self.save_choice(),
-            text="   Show Camera   ",
-            font=("Arial", 20, "bold"),
-        )
-        self.checkbox_show_camera.place(relx=0.5, rely=0.68, anchor="center")
-
         self.checkbox_auto_start = CTkCheckBox(
             self,
             command=lambda: self.save_choice(),
@@ -121,7 +113,6 @@ class HomeFrame(CTkFrame):
     def save_choice(self, *args):
         choice = [
             self.camera_selection.get(),
-            self.checkbox_show_camera.get(),
             self.checkbox_auto_start.get(),
         ]
         update_choice(choice)
@@ -134,8 +125,6 @@ class HomeFrame(CTkFrame):
         choices = self.get_choice()
         self.camera_selection.set(choices[0])
         if choices[1]:
-            self.checkbox_show_camera.select()
-        if choices[2]:
             self.checkbox_auto_start.select()
     
     def process_folder(self,folder):

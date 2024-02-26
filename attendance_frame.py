@@ -1,4 +1,3 @@
-import math
 import pickle
 import threading
 from customtkinter import *
@@ -96,10 +95,6 @@ class AttendanceFrame(CTkFrame):
     @staticmethod
     def prediction(known_face_encodings, face_encoding_to_check, tolerance = 0.45, threshold = 70):
         guess = sum(face_recognition.compare_faces(known_face_encodings,face_encoding_to_check, tolerance))
-        print(guess)
         if guess > threshold:
             return True
         return False
-    
-    
-        

@@ -19,7 +19,10 @@ class FaceAttendanceSystem(CTk):
         self.geometry("900x600")
         self.minsize(900, 600)
         self.create_widgets()
-        self.after(10,self.show_frame(self.home_frame))
+        if self.home_frame.checkbox_auto_start.get() == 1:
+            self.after(10,self.take_attendance())
+        else:
+            self.after(10,self.show_frame(self.home_frame))
         
     def connect_db(self):
         self.db = Database(
@@ -59,7 +62,7 @@ class FaceAttendanceSystem(CTk):
         self.add_student_frame = AddStudentFrame(self, self.db)
         self.attendance_frame = AttendanceFrame(self, self.db)
         self.student_data_frame = StudentDataFrame(self, self.db)
-
+            
     def show_frame(self, frame_to_show: CTkFrame):
         for widget in self.winfo_children():
             if widget != self.title_label:

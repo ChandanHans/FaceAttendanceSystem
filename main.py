@@ -69,6 +69,8 @@ class FaceAttendanceSystem(CTk):
                 widget.pack_forget()
         if self.attendance_frame.running:
             self.attendance_frame.stop()
+        if frame_to_show == self.student_data_frame:
+            self.student_data_frame.show_table()
         frame_to_show.pack(fill="both", expand=True)
 
     def take_attendance(self):

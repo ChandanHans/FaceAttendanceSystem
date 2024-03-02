@@ -229,6 +229,14 @@ class ShowCameraFrame(CTkFrame):
             pass
 
     def save_face(self):
+        try:
+            with open("known_faces.pkl", "rb") as file:
+                previous_data: dict = pickle.load(file)
+            previous_data.pop((self.parent.roll_entry.get().strip()).upper())
+            with open("known_faces.pkl", "wb") as file:
+                pickle.dump(previous_data, file)
+        except Exception:
+            pass
         self.start = True
 
     def delete_widgets(self):

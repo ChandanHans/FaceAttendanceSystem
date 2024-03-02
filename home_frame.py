@@ -1,5 +1,4 @@
-import json
-from multiprocessing import Pool
+from multiprocessing import Pool as ThreadPool
 import pickle
 from threading import Thread
 import time
@@ -129,7 +128,8 @@ class HomeFrame(CTkFrame):
     
     def process_folder(self,folder):
         student_image_paths = [os.path.join(f"./Student_Face/{folder}", image_file) for image_file in os.listdir(f"./Student_Face/{folder}")]
-        with Pool() as pool:
+        # Use ThreadPoolExecutor to execute the function in threads
+        with ThreadPool() as pool:
             results = pool.map(self.get_face_encoding, student_image_paths)
         return [item for item in results if item is not None]
     
@@ -169,8 +169,7 @@ class HomeFrame(CTkFrame):
             student_image = face_recognition.load_image_file(image_path)
             face_encodings = face_recognition.face_encodings(student_image)
             return face_encodings[0] if face_encodings else None
-        except Exception as e:
-            print(e)  # For debugging
+        except Exception:
             return None
         
     @staticmethod

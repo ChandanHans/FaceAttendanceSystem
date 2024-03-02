@@ -1,6 +1,7 @@
 from customtkinter import *
 from PIL import Image
 
+from multiprocessing import freeze_support
 from add_student_frame import AddStudentFrame
 from attendance_frame import AttendanceFrame
 from database import Database
@@ -20,9 +21,9 @@ class FaceAttendanceSystem(CTk):
         self.minsize(900, 600)
         self.create_widgets()
         if self.home_frame.checkbox_auto_start.get() == 1:
-            self.after(10,self.take_attendance())
+            self.after(10,self.take_attendance)
         else:
-            self.after(10,self.show_frame(self.home_frame))
+            self.after(10,lambda : self.show_frame(self.home_frame))
         
     def connect_db(self):
         self.db = Database(
@@ -38,7 +39,7 @@ class FaceAttendanceSystem(CTk):
             text_color="black",
             image=self.logo1_image,
             font=("Arial", 30, "bold"),
-            compound="left",
+            compound="left",    
             height=80,
             bg_color="#B188A8",
         )
@@ -78,5 +79,6 @@ class FaceAttendanceSystem(CTk):
         self.attendance_frame.take_attendance()
 
 if __name__ == "__main__":
+    freeze_support()
     app = FaceAttendanceSystem()
     app.mainloop()

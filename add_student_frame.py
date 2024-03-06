@@ -229,14 +229,7 @@ class ShowCameraFrame(CTkFrame):
             pass
 
     def save_face(self):
-        try:
-            with open("known_faces.pkl", "rb") as file:
-                previous_data: dict = pickle.load(file)
-            previous_data.pop((self.parent.roll_entry.get().strip()).upper())
-            with open("known_faces.pkl", "wb") as file:
-                pickle.dump(previous_data, file)
-        except Exception:
-            pass
+        self.parent.db.execute_query(f"UPDATE students SET Encoding = null WHERE Roll = '{self.parent.roll_entry.get().strip().upper()}';")
         self.start = True
 
     def delete_widgets(self):
@@ -336,18 +329,18 @@ class StudentTableFrame(CTkFrame):
         )
         self.tree.pack(side="left", fill="both", expand=True, padx=(8, 0), pady=(1, 8))
 
-        self.trash_button = CTkButton(
-            self.tree,
-            command=self.remove_data,
-            image=self.trash_logo,
-            text="",
-            width=30,
-            height=30,
-            bg_color="#363636",
-            fg_color="#1B1B1B",
-            hover_color="#4C4C4C",
-        )
-        self.trash_button.place(rely=0.98, relx=0.98, anchor="se")
+        # self.trash_button = CTkButton(
+        #     self.tree,
+        #     command=self.remove_data,
+        #     image=self.trash_logo,
+        #     text="",
+        #     width=30,
+        #     height=30,
+        #     bg_color="#363636",
+        #     fg_color="#1B1B1B",
+        #     hover_color="#4C4C4C",
+        # )
+        # self.trash_button.place(rely=0.98, relx=0.98, anchor="se")
 
         # Configure the Scrollbar
         tree_scroll.config(command=self.tree.yview)
@@ -367,18 +360,10 @@ class StudentTableFrame(CTkFrame):
 
     def remove_data(self):
         for selected_item in self.tree.selection():
-            roll = str(self.tree.item(selected_item)["values"][0]).upper()
-            self.db.execute_query("DELETE FROM students WHERE roll = %s;", (roll,))
+            roll = str(self.tree.item(selected_item)["values"][0].upper())
+            self.db.execute_query("DELETE FROM students WHERE Roll = %s;", (roll,))
             try:
                 shutil.rmtree(f"{os.getcwd()}/Student_Face/{roll}")
-            except Exception:
-                pass
-            try:
-                with open("known_faces.pkl", "rb") as file:
-                    previous_data: dict = pickle.load(file)
-                previous_data.pop(roll)
-                with open("known_faces.pkl", "wb") as file:
-                    pickle.dump(previous_data, file)
             except Exception:
                 pass
         self.after(10, self.show_data)
@@ -397,17 +382,17 @@ class StudentTableFrame(CTkFrame):
         # Construct the basic query
         query = f"""
 SELECT 
-    * 
+    Roll,SName, Course, Sem
 FROM 
     students 
 WHERE 
     1=1
-    AND sname LIKE "{name}%"
-    AND roll LIKE "{roll}%"
-    AND course LIKE "{'' if course == 'ALL' else course}%"
-    AND sem LIKE "{'' if sem == 'ALL' else sem}%"
+    AND SName LIKE "{name}%"
+    AND Roll LIKE "{roll}%"
+    AND Course LIKE "{'' if course == 'ALL' else course}%"
+    AND Sem LIKE "{'' if sem == 'ALL' else sem}%"
 ORDER BY
-    roll
+    Roll
 """
         data = self.db.fetch_data(query)
 

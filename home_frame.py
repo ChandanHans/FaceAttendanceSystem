@@ -6,13 +6,15 @@ from customtkinter import *
 from PIL import Image
 
 import face_recognition
+from database import Database
 from loading_animation import LoadingAnimation
 
 from utility import *
 
 class HomeFrame(CTkFrame):
-    def __init__(self, parent, **kwargs):
+    def __init__(self, parent, db : Database, **kwargs):
         super().__init__(parent, **kwargs)
+        self.db = db
         self.parent = parent
         self.init_ui()
         
@@ -126,7 +128,7 @@ class HomeFrame(CTkFrame):
         if choices[1]:
             self.checkbox_auto_start.select()
     
-    def process_folder(self,folder):
+    def process_for_roll(self,folder):
         student_image_paths = [os.path.join(f"./Student_Face/{folder}", image_file) for image_file in os.listdir(f"./Student_Face/{folder}")]
         # Use ThreadPoolExecutor to execute the function in threads
         with ThreadPool() as pool:
@@ -134,38 +136,41 @@ class HomeFrame(CTkFrame):
         return [item for item in results if item is not None]
     
     def save_new_face_data(self):
+        students_face_data = self.get_saved_encodings()
+        total = len(students_face_data)
         for widget in self.winfo_children():
             if type(widget) == CTkButton:
                 widget.configure(state=DISABLED)
-            
         try:
-            with open("known_faces.pkl", "rb") as file:
-                data : dict = pickle.load(file)
-        except:
-            data = {}
-        try:
-            student_folders = os.listdir("./Student_Face")
-            total = len(student_folders)
             loading_animation = LoadingAnimation(self.parent)
-            for index,folder in enumerate(student_folders):
+            for index,data in enumerate(students_face_data.items()):
                 time.sleep(0.2)
                 loading_animation.change_text(f"{index+1}/{total}")
-                if folder not in data:
-                    data[folder] = self.process_folder(folder)
-                with open("known_faces.pkl", "wb") as file:
-                    pickle.dump(data, file)
+                roll = data[0]
+                if data[1] == None:
+                    encodings = self.process_for_roll(roll)
+                    self.save_encodings(roll,encodings)
+                    
         except FileNotFoundError:
-            showwarning("Warning", "Please add some student face data.")
+            showwarning("Warning", "Please all studenta face data.")
+            
         time.sleep(2)
         loading_animation.stop()
         for widget in self.winfo_children():
             if type(widget) == CTkButton:
                 widget.configure(state=NORMAL)
+    
+    def save_encodings(self,roll,encodings):
+        binary_encoding = pickle.dumps(encodings)
+        self.db.execute_query("UPDATE students SET Encoding=%s WHERE Roll=%s;", (binary_encoding, roll))
         
+    
+    def get_saved_encodings(self):
+        return dict(self.db.fetch_data("SELECT Roll,Encoding from students;"))
+    
     @staticmethod
     def get_face_encoding(image_path):
         try:
-            print(image_path)
             student_image = face_recognition.load_image_file(image_path)
             face_encodings = face_recognition.face_encodings(student_image)
             return face_encodings[0] if face_encodings else None

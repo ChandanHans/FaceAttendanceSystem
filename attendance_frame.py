@@ -61,9 +61,7 @@ class AttendanceFrame(CTkFrame):
                 if self.prediction(self.known_face[roll],face_encoding):
                     name = self.all_student_data[roll]
                     self.mark_present(roll)
-                    # Set font face
                     font = cv2.FONT_HERSHEY_SIMPLEX
-                    # Put text on the frame
                     cv2.putText(frame, name, (left, bottom - 6), font, 0.5, (0, 0, 0), 1)
 
             cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
@@ -83,18 +81,19 @@ class AttendanceFrame(CTkFrame):
     def mark_present(self,roll):
         self.db.execute_query(f"INSERT IGNORE INTO attendance (Roll) VALUES('{roll}')")
     
-    @staticmethod
-    def get_known_face():
-        try:
-            with open("known_faces.pkl", "rb") as file:
-                data : dict = pickle.load(file)
-            return data
-        except Exception:
-            return {}
+
+    def get_known_face(self):
+        data = {}
+        students = self.db.fetch_data("SELECT Roll,Encoding from students;")
+        for student in students:
+            if student[1] != None:
+                data[student[0]] = pickle.loads(student[1])
+        return data
     
     @staticmethod
     def prediction(known_face_encodings, face_encoding_to_check, tolerance = 0.45, threshold = 70):
         guess = sum(face_recognition.compare_faces(known_face_encodings,face_encoding_to_check, tolerance))
+        print(guess)
         if guess > threshold:
             return True
         return False

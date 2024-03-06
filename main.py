@@ -59,7 +59,7 @@ class FaceAttendanceSystem(CTk):
         self.back_button.place(x=10, y=10)
 
         # Initialize frames
-        self.home_frame = HomeFrame(self)
+        self.home_frame = HomeFrame(self, self.db)
         self.add_student_frame = AddStudentFrame(self, self.db)
         self.attendance_frame = AttendanceFrame(self, self.db)
         self.student_data_frame = StudentDataFrame(self, self.db)

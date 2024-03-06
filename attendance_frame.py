@@ -63,7 +63,7 @@ class AttendanceFrame(CTkFrame):
                     self.mark_present(roll)
                     font = cv2.FONT_HERSHEY_SIMPLEX
                     cv2.putText(frame, name, (left, bottom - 6), font, 0.5, (0, 0, 0), 1)
-
+                    break
             cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
         return frame
     

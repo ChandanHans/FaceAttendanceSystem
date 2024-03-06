@@ -329,18 +329,18 @@ class StudentTableFrame(CTkFrame):
         )
         self.tree.pack(side="left", fill="both", expand=True, padx=(8, 0), pady=(1, 8))
 
-        # self.trash_button = CTkButton(
-        #     self.tree,
-        #     command=self.remove_data,
-        #     image=self.trash_logo,
-        #     text="",
-        #     width=30,
-        #     height=30,
-        #     bg_color="#363636",
-        #     fg_color="#1B1B1B",
-        #     hover_color="#4C4C4C",
-        # )
-        # self.trash_button.place(rely=0.98, relx=0.98, anchor="se")
+        self.trash_button = CTkButton(
+            self.tree,
+            command=self.remove_data,
+            image=self.trash_logo,
+            text="",
+            width=30,
+            height=30,
+            bg_color="#363636",
+            fg_color="#1B1B1B",
+            hover_color="#4C4C4C",
+        )
+        self.trash_button.place(rely=0.98, relx=0.98, anchor="se")
 
         # Configure the Scrollbar
         tree_scroll.config(command=self.tree.yview)

@@ -5,12 +5,11 @@ import threading
 import cv2
 import tkinter as tk
 from PIL import Image
-from tkinter import ttk
+from tkinter import ttk, messagebox
 import face_recognition
 from customtkinter import *
 from database import Database
 from utility import *
-
 
 class AddStudentFrame(CTkFrame):
     def __init__(self, parent, db: Database, **kwargs):
@@ -359,14 +358,18 @@ class StudentTableFrame(CTkFrame):
         self.tree.heading("Sem", text="Sem", anchor=tk.W)
 
     def remove_data(self):
-        for selected_item in self.tree.selection():
-            roll = str(self.tree.item(selected_item)["values"][0].upper())
-            self.db.execute_query("DELETE FROM students WHERE Roll = %s;", (roll,))
-            try:
-                shutil.rmtree(f"{os.getcwd()}/Student_Face/{roll}")
-            except Exception:
-                pass
-        self.after(10, self.show_data)
+        response = messagebox.askyesno("Confirm", "Are you sure you want to do this?")
+        if response:
+            for selected_item in self.tree.selection():
+                roll = str(self.tree.item(selected_item)["values"][0].upper())
+                self.db.execute_query("DELETE FROM students WHERE Roll = %s;", (roll,))
+                try:
+                    shutil.rmtree(f"{os.getcwd()}/Student_Face/{roll}")
+                except Exception:
+                    pass
+            self.after(10, self.show_data)
+        else:
+            self.after(10, self.show_data)
 
     def clear_tree(self):
         for item in self.tree.get_children():

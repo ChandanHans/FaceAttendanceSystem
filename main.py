@@ -28,7 +28,7 @@ class FaceAttendanceSystem(CTk):
     def connect_db(self):
         self.db = Database(
             host = config['HOST'], user = config['USER'], passwd = config['PASSWD'], database = config['DB']
-        ) 
+        )
     
     def create_widgets(self):
         self.logo1_image = CTkImage(Image.open(resource_path("src/checked-user.png")), size=(50, 50))
@@ -81,4 +81,5 @@ class FaceAttendanceSystem(CTk):
 if __name__ == "__main__":
     freeze_support()
     app = FaceAttendanceSystem()
+
     app.mainloop()

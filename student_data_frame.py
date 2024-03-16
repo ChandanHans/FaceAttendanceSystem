@@ -1,4 +1,4 @@
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from customtkinter import *
 from PIL import Image
 from datetime import datetime, timedelta
@@ -85,7 +85,7 @@ class StudentDataFrame(CTkFrame):
         self.set_date_list()
 
     def show_table(self, *args):
-        try:
+        try:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
             self.tree.destroy()
         except:
             pass
@@ -152,20 +152,24 @@ class StudentDataFrame(CTkFrame):
             self.download_button.place(rely=0.96, relx=0.98, anchor="se")
 
     def save_tree(self, tree: ttk.Treeview):
-        wb = Workbook()
-        ws = wb.active
-        headers = tree["columns"]
-        ws.append(headers)
-        
-        for item in tree.get_children():
-            row = tree.item(item)['values']
-            ws.append(row)
-        course = self.filter_course_entry.get()
-        sem = self.filter_sem_entry.get()
-        dt1 = datetime.strptime(self.min_date.get(), "%Y-%m-%d").strftime("%d-%m-%y")
-        dt2 = datetime.strptime(self.max_date.get(), "%Y-%m-%d").strftime("%d-%m-%y")
-        file_name = f"{course} {sem} {dt1}_{dt2}.xlsx".lower()
-        wb.save(file_name)
+        try:
+            wb = Workbook()
+            ws = wb.active
+            headers = tree["columns"]
+            ws.append(headers)
+            
+            for item in tree.get_children():
+                row = tree.item(item)['values']
+                ws.append(row)
+            course = self.filter_course_entry.get()
+            sem = self.filter_sem_entry.get()
+            dt1 = datetime.strptime(self.min_date.get(), "%Y-%m-%d").strftime("%d-%m-%y")
+            dt2 = datetime.strptime(self.max_date.get(), "%Y-%m-%d").strftime("%d-%m-%y")
+            file_name = f"{course} {sem} {dt1}_{dt2}.xlsx".lower()
+            wb.save(file_name)
+            messagebox.showinfo("Info", "File saved.")
+        except:
+            messagebox.showerror("Error", "File couldn't be saved.")
 
     def generate_query(self):
         sem = self.filter_sem_entry.get()

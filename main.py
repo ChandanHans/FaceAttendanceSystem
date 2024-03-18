@@ -2,11 +2,11 @@ from customtkinter import *
 from PIL import Image
 
 from multiprocessing import freeze_support
-from add_student_frame import AddStudentFrame
+from add_data_frame import AddDataFrame
 from attendance_frame import AttendanceFrame
 from database import Database
 from home_frame import HomeFrame
-from student_data_frame import StudentDataFrame
+from data_frame import DataFrame
 
 from utility import *
 
@@ -17,7 +17,6 @@ class FaceAttendanceSystem(CTk):
         super().__init__()
         self.connect_db()
         self.title("FaceAttendanceSystem")
-        self.geometry("900x600")
         self.minsize(900, 600)
         self.create_widgets()
         if self.home_frame.checkbox_auto_start.get() == 1:
@@ -60,9 +59,9 @@ class FaceAttendanceSystem(CTk):
 
         # Initialize frames
         self.home_frame = HomeFrame(self, self.db)
-        self.add_student_frame = AddStudentFrame(self, self.db)
+        self.add_data_frame = AddDataFrame(self, self.db)
         self.attendance_frame = AttendanceFrame(self, self.db)
-        self.student_data_frame = StudentDataFrame(self, self.db)
+        self.student_data_frame = DataFrame(self, self.db)
             
     def show_frame(self, frame_to_show: CTkFrame):
         for widget in self.winfo_children():
@@ -81,5 +80,5 @@ class FaceAttendanceSystem(CTk):
 if __name__ == "__main__":
     freeze_support()
     app = FaceAttendanceSystem()
-
+    app.after(0, lambda: app.state('zoomed'))
     app.mainloop()

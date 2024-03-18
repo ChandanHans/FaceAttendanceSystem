@@ -11,7 +11,7 @@ from customtkinter import *
 from database import Database
 from utility import *
 
-class AddStudentFrame(CTkFrame):
+class AddDataFrame(CTkFrame):
     def __init__(self, parent, db: Database, **kwargs):
         super().__init__(parent, **kwargs)
         self.db = db
@@ -57,7 +57,7 @@ class AddStudentFrame(CTkFrame):
         self.sem_entry.place(relx=0.4, rely=0.55, relwidth=0.5)
 
         self.submit_button = CTkButton(
-            self.ask_data_frame, text="Add Student", command=self.start_camera
+            self.ask_data_frame, text="Add Profile", command=self.start_camera
         )
         self.submit_button.place(relx=0.5, rely=0.87, anchor="center")
 
@@ -103,10 +103,10 @@ class AddStudentFrame(CTkFrame):
         course = self.course_entry.get()
         sem = self.sem_entry.get()
         success = self.db.execute_query(
-            """INSERT INTO students (Roll, SName, Course, Sem)
+            """INSERT INTO student (ID, Name, Course, Sem)
                 VALUES (%s, %s, %s, %s)
                 ON DUPLICATE KEY UPDATE
-                SName = VALUES(SName), Course = VALUES(Course), Sem = VALUES(Sem);""",
+                Name = VALUES(Name), Course = VALUES(Course), Sem = VALUES(Sem);""",
             (roll, name, course, sem),
         )
 
@@ -120,10 +120,11 @@ class AddStudentFrame(CTkFrame):
         student_folder_path = "Student_Face/" + str(roll.upper())
         if not os.path.exists(student_folder_path):
             os.makedirs(student_folder_path)
-
-
+        
+        
+        
 class ShowCameraFrame(CTkFrame):
-    def __init__(self, parent: AddStudentFrame, **kwargs):
+    def __init__(self, parent: AddDataFrame, **kwargs):
         super().__init__(parent, **kwargs)
         self.parent = parent
         self.cap = None
@@ -228,7 +229,7 @@ class ShowCameraFrame(CTkFrame):
             pass
 
     def save_face(self):
-        self.parent.db.execute_query(f"UPDATE students SET Encoding = null WHERE Roll = '{self.parent.roll_entry.get().strip().upper()}';")
+        self.parent.db.execute_query(f"UPDATE student SET Encoding = null WHERE ID = '{self.parent.roll_entry.get().strip().upper()}';")
         self.start = True
 
     def delete_widgets(self):
@@ -362,7 +363,7 @@ class StudentTableFrame(CTkFrame):
         if response:
             for selected_item in self.tree.selection():
                 roll = str(self.tree.item(selected_item)["values"][0].upper())
-                self.db.execute_query("DELETE FROM students WHERE Roll = %s;", (roll,))
+                self.db.execute_query("DELETE FROM student WHERE ID = %s;", (roll,))
                 try:
                     shutil.rmtree(f"{os.getcwd()}/Student_Face/{roll}")
                 except Exception:
@@ -385,17 +386,17 @@ class StudentTableFrame(CTkFrame):
         # Construct the basic query
         query = f"""
 SELECT 
-    Roll,SName, Course, Sem
+    ID, Name, Course, Sem
 FROM 
-    students 
+    student
 WHERE 
     1=1
-    AND SName LIKE "{name}%"
-    AND Roll LIKE "{roll}%"
+    AND Name LIKE "{name}%"
+    AND ID LIKE "{roll}%"
     AND Course LIKE "{'' if course == 'ALL' else course}%"
     AND Sem LIKE "{'' if sem == 'ALL' else sem}%"
 ORDER BY
-    Roll
+    ID
 """
         data = self.db.fetch_data(query)
 

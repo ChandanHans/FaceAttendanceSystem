@@ -9,7 +9,7 @@ from openpyxl import Workbook
 from utility import *
 
 
-class StudentDataFrame(CTkFrame):
+class DataFrame(CTkFrame):
     def __init__(self, parent, db: Database, **kwargs):
         super().__init__(parent, **kwargs)
         self.db = db
@@ -183,18 +183,18 @@ class StudentDataFrame(CTkFrame):
 
         query = f"""
 SELECT
-    s.Roll,
-    s.SName,
+    s.ID,
+    s.Name,
     {date_cases}
 FROM
-    students s
+    student s
 LEFT JOIN
-    attendance a ON s.Roll = a.Roll
+    attendance a ON s.ID = a.ID
 WHERE
     s.Sem like '{'%' if sem == "ALL" else sem}' AND s.Course like '{'%' if course == "ALL" else course}'
 GROUP BY
-    s.Roll,
-    s.SName
+    s.ID,
+    s.Name
 """
         return query
 

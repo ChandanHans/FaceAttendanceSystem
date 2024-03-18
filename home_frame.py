@@ -22,7 +22,7 @@ class HomeFrame(CTkFrame):
     def init_ui(self):
         # Load images
         self.logo2_image = CTkImage(
-            Image.open(resource_path("src/student-registration.png")), size=(40, 40)
+            Image.open(resource_path("src/add-user.png")), size=(40, 40)
         )
         self.logo3_image = CTkImage(Image.open(resource_path("src/list.png")), size=(40, 40))
         self.logo4_image = CTkImage(Image.open(resource_path("src/face-id.png")), size=(40, 40))
@@ -30,8 +30,8 @@ class HomeFrame(CTkFrame):
 
         self.button_add_student = CTkButton(
             self,
-            command=lambda: self.parent.show_frame(self.parent.add_student_frame),
-            text="  Add Student      ",
+            command=lambda: self.parent.show_frame(self.parent.add_data_frame),
+            text="  Create Profile       ",
             image=self.logo2_image,
             corner_radius=5,
             font=("Arial", 20, "bold"),
@@ -43,7 +43,7 @@ class HomeFrame(CTkFrame):
         self.button_train_data = CTkButton(
             self,
             command= lambda : self.start_thread(self.save_new_face_data),
-            text="  Create Dataset  ",
+            text="  Create Dataset     ",
             image=self.logo5_image,
             corner_radius=5,
             font=("Arial", 20, "bold"),
@@ -55,7 +55,7 @@ class HomeFrame(CTkFrame):
         self.button_attendance = CTkButton(
             self,
             command=lambda : self.parent.take_attendance(),
-            text="  Attendance        ",
+            text="  Start Attendance  ",
             image=self.logo4_image,
             corner_radius=5,
             font=("Arial", 20, "bold"),
@@ -67,7 +67,7 @@ class HomeFrame(CTkFrame):
         self.button_student_data = CTkButton(
             self,
             command=lambda: self.parent.show_frame(self.parent.student_data_frame),
-            text="  Student Data     ",
+            text="  View Attendance ",
             image=self.logo3_image,
             corner_radius=5,
             font=("Arial", 20, "bold"),
@@ -152,7 +152,7 @@ class HomeFrame(CTkFrame):
                     self.save_encodings(roll,encodings)
                     
         except FileNotFoundError:
-            showwarning("Warning", "Please all studenta face data.")
+            showwarning("Warning", "Please all student face data.")
             
         time.sleep(2)
         loading_animation.stop()
@@ -162,11 +162,11 @@ class HomeFrame(CTkFrame):
     
     def save_encodings(self,roll,encodings):
         binary_encoding = pickle.dumps(encodings)
-        self.db.execute_query("UPDATE students SET Encoding=%s WHERE Roll=%s;", (binary_encoding, roll))
+        self.db.execute_query("UPDATE student SET Encoding=%s WHERE ID=%s;", (binary_encoding, roll))
         
     
     def get_saved_encodings(self):
-        return dict(self.db.fetch_data("SELECT Roll,Encoding from students;"))
+        return dict(self.db.fetch_data("SELECT ID,Encoding from student;"))
     
     @staticmethod
     def get_face_encoding(image_path):

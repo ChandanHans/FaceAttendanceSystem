@@ -74,17 +74,17 @@ class AttendanceFrame(CTkFrame):
         return int(get_config()["CHOICE"][0])
     
     def get_all_student_data(self):
-        query = "SELECT Roll,SName FROM students;"
+        query = "SELECT ID,SName FROM student;"
         data = self.db.fetch_data(query)
         return dict(data)
     
     def mark_present(self,roll):
-        self.db.execute_query(f"INSERT IGNORE INTO attendance (Roll) VALUES('{roll}')")
+        self.db.execute_query(f"INSERT IGNORE INTO attendance (ID) VALUES('{roll}')")
     
 
     def get_known_face(self):
         data = {}
-        students = self.db.fetch_data("SELECT Roll,Encoding from students;")
+        students = self.db.fetch_data("SELECT ID,Encoding from student;")
         for student in students:
             if student[1] != None:
                 data[student[0]] = pickle.loads(student[1])

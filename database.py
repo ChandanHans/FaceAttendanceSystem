@@ -1,17 +1,27 @@
 import mysql.connector
 
 class Database:
-    def __init__(self, host, user, passwd, database):
+    def __init__(self, host, user, passwd, database, wait_timeout=28800, interactive_timeout=28800):
         self.host = host
         self.user = user
         self.passwd = passwd
         self.database = database
+        self.wait_timeout = wait_timeout
+        self.interactive_timeout = interactive_timeout
         self.connect()
 
     def connect(self):
         self.conn = mysql.connector.connect(
             host=self.host, user=self.user, passwd=self.passwd, database=self.database
         )
+        self.set_session_timeouts()
+
+    def set_session_timeouts(self):
+        """Set session-specific timeout values for the MySQL connection."""
+        query = "SET SESSION wait_timeout = %s, SESSION interactive_timeout = %s"
+        params = (self.wait_timeout, self.interactive_timeout)
+        with self.conn.cursor() as cursor:
+            cursor.execute(query, params)
 
     def fetch_data(self, query, params=()):
         """Fetch data from the database using a SELECT query."""

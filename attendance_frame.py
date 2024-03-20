@@ -20,7 +20,7 @@ class AttendanceFrame(CTkFrame):
     
     def take_attendance(self):
         self.known_face = self.get_known_face()
-        self.all_student_data = self.get_all_student_data()
+        self.all_data = self.get_all_data()
         self.image_label.pack(padx=6, pady=6, fill="both")
         self.cap = cv2.VideoCapture(self.get_camera_choice())
         self.running = True
@@ -57,10 +57,10 @@ class AttendanceFrame(CTkFrame):
         face_encodings = face_recognition.face_encodings(frame, face_locations)
         for face_location,face_encoding in zip(face_locations,face_encodings):
             top, right, bottom, left = face_location
-            for roll in self.known_face:
-                if self.prediction(self.known_face[roll],face_encoding):
-                    name = self.all_student_data[roll]
-                    self.mark_present(roll)
+            for id in self.known_face:
+                if self.prediction(self.known_face[id],face_encoding):
+                    name = self.all_data[id]
+                    self.mark_present(id)
                     font = cv2.FONT_HERSHEY_SIMPLEX
                     cv2.putText(frame, name, (left, bottom - 6), font, 0.5, (0, 0, 0), 1)
                     break
@@ -73,21 +73,21 @@ class AttendanceFrame(CTkFrame):
     def get_camera_choice(self):
         return int(get_config()["CHOICE"][0])
     
-    def get_all_student_data(self):
-        query = "SELECT ID,SName FROM student;"
+    def get_all_data(self):
+        query = "SELECT ID, Name FROM student UNION ALL SELECT ID, Name from teacher;"
         data = self.db.fetch_data(query)
         return dict(data)
     
-    def mark_present(self,roll):
-        self.db.execute_query(f"INSERT IGNORE INTO attendance (ID) VALUES('{roll}')")
+    def mark_present(self,id):
+        self.db.execute_query(f"INSERT IGNORE INTO attendance (ID) VALUES('{id}')")
     
 
     def get_known_face(self):
         data = {}
-        students = self.db.fetch_data("SELECT ID,Encoding from student;")
-        for student in students:
-            if student[1] != None:
-                data[student[0]] = pickle.loads(student[1])
+        profiles = self.db.fetch_data("SELECT ID,Encoding from student UNION ALL SELECT ID,Encoding from teacher;")
+        for profile in profiles:
+            if profile[1] != None:
+                data[profile[0]] = pickle.loads(profile[1])
         return data
     
     @staticmethod

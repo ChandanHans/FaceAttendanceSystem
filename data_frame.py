@@ -49,7 +49,7 @@ class DataFrame(CTkFrame):
         self.filter_sem_entry = CTkComboBox(
             self.filter_frame,
             command=self.show_table,
-            values=["ALL", "1st", "2nd", "3rd", "4th", "5th", "6th"],
+            values=["ALL", "1", "2", "3", "4", "5", "6"],
             bg_color="#B188A8",
             state="readonly",
         )

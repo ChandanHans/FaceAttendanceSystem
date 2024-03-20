@@ -128,51 +128,74 @@ class HomeFrame(CTkFrame):
         if choices[1]:
             self.checkbox_auto_start.select()
     
-    def process_for_roll(self,folder):
-        student_image_paths = [os.path.join(f"./Student_Face/{folder}", image_file) for image_file in os.listdir(f"./Student_Face/{folder}")]
+    def process_for_folder(self,folder):
+        student_image_paths = [os.path.join(folder, image_file) for image_file in os.listdir(folder)]
         # Use ThreadPoolExecutor to execute the function in threads
         with ThreadPool() as pool:
             results = pool.map(self.get_face_encoding, student_image_paths)
         return [item for item in results if item is not None]
     
     def save_new_face_data(self):
-        students_face_data = self.get_saved_encodings()
-        total = len(students_face_data)
         for widget in self.winfo_children():
             if type(widget) == CTkButton:
                 widget.configure(state=DISABLED)
-        try:
-            loading_animation = LoadingAnimation(self.parent)
-            for index,data in enumerate(students_face_data.items()):
-                time.sleep(0.2)
-                loading_animation.change_text(f"{index+1}/{total}")
-                roll = data[0]
+        
+        students_face_data = self.get_student_encodings()
+        total = len(students_face_data)
+        loading_animation = LoadingAnimation(self.parent)
+        for index,data in enumerate(students_face_data.items()):
+            try:
+                time.sleep(0.05)
+                loading_animation.change_text(f"student\n{index+1}/{total}")
+                id = data[0]
                 if data[1] == None:
-                    encodings = self.process_for_roll(roll)
-                    self.save_encodings(roll,encodings)
-                    
-        except FileNotFoundError:
-            showwarning("Warning", "Please all student face data.")
-            
+                    folder = "./Student_face/" + id
+                    encodings = self.process_for_folder(folder)
+                    self.save_student_encodings(id,encodings)
+            except FileNotFoundError:
+                showwarning("Warning", f"Missing folder for {id}")
+        
+        teachers_face_data = self.get_teacher_encodings()
+        total = len(teachers_face_data)
+        for index,data in enumerate(teachers_face_data.items()):
+            try:
+                time.sleep(0.05)
+                loading_animation.change_text(f"teacher\n{index+1}/{total}")
+                id = data[0]
+                if data[1] == None:
+                    folder = "./Teacher_face/" + id
+                    encodings = self.process_for_folder(folder)
+                    self.save_teacher_encodings(id,encodings)
+            except FileNotFoundError:
+                showwarning("Warning", f"Missing folder for {id}")
+        
         time.sleep(2)
         loading_animation.stop()
         for widget in self.winfo_children():
             if type(widget) == CTkButton:
                 widget.configure(state=NORMAL)
     
-    def save_encodings(self,roll,encodings):
+    def save_student_encodings(self,id,encodings):
         binary_encoding = pickle.dumps(encodings)
-        self.db.execute_query("UPDATE student SET Encoding=%s WHERE ID=%s;", (binary_encoding, roll))
+        self.db.execute_query("UPDATE student SET Encoding=%s WHERE ID=%s;", (binary_encoding, id))
+    
+    def save_teacher_encodings(self,id,encodings):
+        binary_encoding = pickle.dumps(encodings)
+        self.db.execute_query("UPDATE teacher SET Encoding=%s WHERE ID=%s;", (binary_encoding, id))
         
     
-    def get_saved_encodings(self):
+    def get_student_encodings(self):
         return dict(self.db.fetch_data("SELECT ID,Encoding from student;"))
+    
+    def get_teacher_encodings(self):
+        return dict(self.db.fetch_data("SELECT ID,Encoding from teacher;"))
     
     @staticmethod
     def get_face_encoding(image_path):
         try:
             student_image = face_recognition.load_image_file(image_path)
             face_encodings = face_recognition.face_encodings(student_image)
+            print(image_path)
             return face_encodings[0] if face_encodings else None
         except Exception:
             return None

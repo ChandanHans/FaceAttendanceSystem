@@ -17,7 +17,7 @@ class AttendanceFrame(CTkFrame):
         self.parent = parent
         self.running = False
         self.name_queue = queue.Queue()
-        
+        self.engine = pyttsx3.init()
         self.configure(border_width=4, border_color="#5665EF")
         self.image_label = CTkLabel(self, text="")
     
@@ -78,9 +78,8 @@ class AttendanceFrame(CTkFrame):
                 now =self.name_queue.get()
                 if previous != now:
                     previous = now
-                    engine = pyttsx3.init()
-                    engine.say(now )
-                    engine.runAndWait()
+                    self.engine.say(now )
+                    self.engine.runAndWait()
     
     def stop(self):
         self.running = False
@@ -107,9 +106,8 @@ class AttendanceFrame(CTkFrame):
         return data
     
     @staticmethod
-    def prediction(known_face_encodings, face_encoding_to_check, tolerance = 0.4, threshold = 70):
+    def prediction(known_face_encodings, face_encoding_to_check, tolerance = 1, threshold = 70):
         guess = sum(face_recognition.compare_faces(known_face_encodings,face_encoding_to_check, tolerance))
-        print(guess)
         if guess > threshold:
             return True
         return False

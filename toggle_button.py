@@ -1,7 +1,7 @@
-import customtkinter as ctk
+from customtkinter import *
 from tkinter import Tk
 
-class ToggleButton(ctk.CTkButton):
+class ToggleButton(CTkButton):
     def __init__(self, master=None, **kw):
         self.state = False  # Start with the initial state
         self.texts = kw.pop('texts', ('State 1', 'State 2'))  # Default texts for two states

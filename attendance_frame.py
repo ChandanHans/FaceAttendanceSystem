@@ -2,7 +2,7 @@ import pickle
 from threading import Thread
 from customtkinter import *
 import cv2
-
+import queue
 import pyttsx3
 from PIL import Image
 from database import Database
@@ -16,7 +16,8 @@ class AttendanceFrame(CTkFrame):
         self.db = db
         self.parent = parent
         self.running = False
-        self.engine = pyttsx3.init()
+        self.name_queue = queue.Queue()
+        
         self.configure(border_width=4, border_color="#5665EF")
         self.image_label = CTkLabel(self, text="")
     
@@ -24,8 +25,8 @@ class AttendanceFrame(CTkFrame):
         self.image_label.pack(padx=6, pady=6, fill="both")
         self.cap = cv2.VideoCapture(self.get_camera_choice())
         self.running = True
-        self.camera_process_thread = Thread(target=self.camera_thread, daemon=True)
-        self.camera_process_thread.start()
+        Thread(target=self.camera_thread, daemon=True).start()
+        Thread(target=self.say_name,daemon=True).start()
         
         
     def camera_thread(self):
@@ -62,14 +63,24 @@ class AttendanceFrame(CTkFrame):
             for id in self.known_face:
                 if self.prediction(self.known_face[id],face_encoding):
                     name = self.all_data[id]
-                    self.engine.say(name)
-                    self.engine.runAndWait()
+                    self.name_queue.put(name)
                     self.mark_present(id)
                     font = cv2.FONT_HERSHEY_SIMPLEX
                     cv2.putText(frame, name, (left, bottom - 6), font, 0.5, (0, 0, 0), 1)
                     break
             cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
         return frame
+    
+    def say_name(self):
+        previous = ""
+        while self.running:
+            if not self.name_queue.empty():
+                now =self.name_queue.get()
+                if previous != now:
+                    previous = now
+                    engine = pyttsx3.init()
+                    engine.say(now )
+                    engine.runAndWait()
     
     def stop(self):
         self.running = False
@@ -96,7 +107,7 @@ class AttendanceFrame(CTkFrame):
         return data
     
     @staticmethod
-    def prediction(known_face_encodings, face_encoding_to_check, tolerance = 0.45, threshold = 70):
+    def prediction(known_face_encodings, face_encoding_to_check, tolerance = 0.4, threshold = 70):
         guess = sum(face_recognition.compare_faces(known_face_encodings,face_encoding_to_check, tolerance))
         print(guess)
         if guess > threshold:

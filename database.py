@@ -1,51 +1,57 @@
-from mysql.connector import pooling
+import mysql.connector
 
 class Database:
-    def __init__(self, host, user, passwd, database, pool_name="mypool", pool_size=3):
+    def __init__(self, host, user, passwd, database, wait_timeout=28800, interactive_timeout=28800):
         self.host = host
         self.user = user
         self.passwd = passwd
         self.database = database
-        self.pool_name = pool_name
-        self.pool_size = pool_size
-        self.create_pool()
+        self.wait_timeout = wait_timeout
+        self.interactive_timeout = interactive_timeout
+        self.connect()
 
-    def create_pool(self):
-        self.pool = pooling.MySQLConnectionPool(
-            pool_name=self.pool_name,
-            pool_size=self.pool_size,
-            pool_reset_session=True,
-            host=self.host,
-            user=self.user,
-            passwd=self.passwd,
-            database=self.database
+    def connect(self):
+        self.conn = mysql.connector.connect(
+            host=self.host, user=self.user, passwd=self.passwd, database=self.database
         )
+        self.execute_query("SET time_zone = '+05:30';")
+        self.set_session_timeouts()
+
+    def set_session_timeouts(self):
+        """Set session-specific timeout values for the MySQL connection."""
+        query = "SET SESSION wait_timeout = %s, SESSION interactive_timeout = %s"
+        params = (self.wait_timeout, self.interactive_timeout)
+        with self.conn.cursor() as cursor:
+            cursor.execute(query, params)
 
     def fetch_data(self, query, params=()):
-        conn = self.pool.get_connection()
+        """Fetch data from the database using a SELECT query."""
         try:
-            with conn.cursor() as cursor:
+            if self.conn is None:
+                self.connect()
+            with self.conn.cursor() as cursor:
                 cursor.execute(query, params)
                 result = cursor.fetchall()
-            conn.close()
             return result
         except Exception as e:
-            print(f"An error occurred: {e}")
-            conn.close()
+            print(e)
             return []
 
     def execute_query(self, query, params=()):
-        conn = self.pool.get_connection()
+        """Execute a given SQL query (INSERT, UPDATE, DELETE) and return True if successful."""
+        if self.conn is None:
+            self.connect()
         try:
-            with conn.cursor() as cursor:
+            with self.conn.cursor() as cursor:
                 cursor.execute(query, params)
-            conn.commit()
+            self.conn.commit()
+            return True  # Indicates that the query and commit were successful
         except Exception as e:
             print(f"An error occurred: {e}")
-            conn.rollback()
-        finally:
-            conn.close()
+            self.conn.rollback()  # Roll back the transaction on error
+            return False
 
     def close(self):
-        """Close all connections in the pool."""
-        self.pool.close()
+        """Close the database connection."""
+        if self.conn:
+            self.conn.close()

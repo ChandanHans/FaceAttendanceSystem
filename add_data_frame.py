@@ -83,12 +83,14 @@ class AskDataFrame(CTkFrame):
         self.entry1 = StringVar()
         self.entry2 = StringVar()
 
+        self.status_label = CTkLabel(self, text="", fg_color="transparent")
+        
         self.toggle_button = ToggleButton(
             self,
-            texts=("Student", "Teacher"),
+            texts=("Teacher", "Student"),
             callbacks=(self.ask_student, self.ask_teacher),
         )
-        self.toggle_button.place(relx=0.5, rely=0.08, anchor=CENTER)
+        self.toggle_button.place(relx=0.3, rely=0.87, anchor=CENTER)
 
         self.name_label = CTkLabel(self, text="Name")
         self.name_entry = CTkEntry(self, textvariable=self.entry1)
@@ -120,16 +122,16 @@ class AskDataFrame(CTkFrame):
         self.submit_button = CTkButton(
             self, text="Add Profile", command=self.parent.start_camera
         )
-        self.submit_button.place(relx=0.5, rely=0.87, anchor="center")
+        self.submit_button.place(relx=0.7, rely=0.87, anchor="center")
 
         self.ok_logo = CTkImage(Image.open(resource_path("src/ok.png")), size=(30, 30))
         self.cancel_logo = CTkImage(
             Image.open(resource_path("src/cancel.png")), size=(30, 30)
         )
-        self.status_label = CTkLabel(self, text="", fg_color="transparent")
         self.ask_student()
 
     def ask_student(self):
+        self.toggle_button.configure(state=DISABLED)
         self.dep_label.place_forget()
         self.dep_entry.place_forget()
         self.dep_entry.set("")
@@ -141,9 +143,10 @@ class AskDataFrame(CTkFrame):
         self.course_entry.place(relx=0.4, rely=0.42, relwidth=0.5)
         self.sem_label.place(relx=0.1, rely=0.54)
         self.sem_entry.place(relx=0.4, rely=0.54, relwidth=0.5)
-        self.on_entry_update()
+        self.on_click()
 
     def ask_teacher(self):
+        self.toggle_button.configure(state=DISABLED)
         self.sem_label.place_forget()
         self.sem_entry.place_forget()
         self.sem_entry.set("")
@@ -156,10 +159,10 @@ class AskDataFrame(CTkFrame):
         self.id_entry.place(relx=0.4, rely=0.3, relwidth=0.5)
         self.dep_label.place(relx=0.1, rely=0.42)
         self.dep_entry.place(relx=0.4, rely=0.42, relwidth=0.5)
-        self.on_entry_update()
+        self.on_click()
 
 
-    def on_entry_update(self, *args):
+    def on_click(self, *args):
         def temp():
             try:
                 if not self.toggle_button.state:
@@ -169,7 +172,8 @@ class AskDataFrame(CTkFrame):
                 self.forget_status()
             except:
                 pass
-        Thread(target=temp, daemon=True).start()   
+            self.toggle_button.configure(state=NORMAL)
+        self.after(50,temp) 
             
 
     def get_data(self):
@@ -322,7 +326,7 @@ class ShowCameraFrame(CTkFrame):
             self.cap = None
         self.image_label.pack_forget()
         self.button_frame.pack_forget()
-        self.parent.ask_data_frame.submit_button.configure(state="normal")
+        self.parent.ask_data_frame.submit_button.configure(state=NORMAL)
 
     def stop_camera(self):
         self.running = False

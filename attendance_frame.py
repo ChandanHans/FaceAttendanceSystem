@@ -1,8 +1,9 @@
 import pickle
-import threading
+from threading import Thread
 from customtkinter import *
 import cv2
 
+import pyttsx3
 from PIL import Image
 from database import Database
 import face_recognition
@@ -15,20 +16,21 @@ class AttendanceFrame(CTkFrame):
         self.db = db
         self.parent = parent
         self.running = False
+        self.engine = pyttsx3.init()
         self.configure(border_width=4, border_color="#5665EF")
         self.image_label = CTkLabel(self, text="")
     
     def take_attendance(self):
-        self.known_face = self.get_known_face()
-        self.all_data = self.get_all_data()
         self.image_label.pack(padx=6, pady=6, fill="both")
         self.cap = cv2.VideoCapture(self.get_camera_choice())
         self.running = True
-        self.camera_process_thread = threading.Thread(target=self.camera_thread, daemon=True)
+        self.camera_process_thread = Thread(target=self.camera_thread, daemon=True)
         self.camera_process_thread.start()
         
         
     def camera_thread(self):
+        self.known_face = self.get_known_face()
+        self.all_data = self.get_all_data()
         while self.running:
             ret, frame = self.cap.read()
             if not ret:
@@ -60,6 +62,8 @@ class AttendanceFrame(CTkFrame):
             for id in self.known_face:
                 if self.prediction(self.known_face[id],face_encoding):
                     name = self.all_data[id]
+                    self.engine.say(name)
+                    self.engine.runAndWait()
                     self.mark_present(id)
                     font = cv2.FONT_HERSHEY_SIMPLEX
                     cv2.putText(frame, name, (left, bottom - 6), font, 0.5, (0, 0, 0), 1)
@@ -79,8 +83,9 @@ class AttendanceFrame(CTkFrame):
         return dict(data)
     
     def mark_present(self,id):
-        self.db.execute_query(f"INSERT IGNORE INTO attendance (ID) VALUES('{id}')")
-    
+        def temp():
+            self.db.execute_query(f"INSERT IGNORE INTO attendance (ID) VALUES('{id}')")
+        Thread(target=temp,daemon=True).start()
 
     def get_known_face(self):
         data = {}

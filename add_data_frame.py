@@ -1,9 +1,8 @@
 import os
-import pickle
 import shutil
-import threading
 import cv2
 import tkinter as tk
+from threading import Thread
 from PIL import Image
 from tkinter import ttk, messagebox
 import face_recognition
@@ -100,7 +99,6 @@ class AskDataFrame(CTkFrame):
         self.course_label = CTkLabel(self, text="Course")
         self.course_entry = CTkComboBox(
             self,
-            command=self.on_entry_update,
             values=["BSC", "BCA", "BBA"],
             state="readonly",
         )
@@ -108,7 +106,6 @@ class AskDataFrame(CTkFrame):
         self.sem_label = CTkLabel(self, text="Semester")
         self.sem_entry = CTkComboBox(
             self,
-            command=self.on_entry_update,
             values=["1", "2", "3", "4", "5", "6"],
             state="readonly",
         )
@@ -116,7 +113,6 @@ class AskDataFrame(CTkFrame):
         self.dep_label = CTkLabel(self, text="Dep")
         self.dep_entry = CTkComboBox(
             self,
-            command=self.on_entry_update,
             values=["IT", "Management"],
             state="readonly",
         )
@@ -131,9 +127,6 @@ class AskDataFrame(CTkFrame):
             Image.open(resource_path("src/cancel.png")), size=(30, 30)
         )
         self.status_label = CTkLabel(self, text="", fg_color="transparent")
-        self.entry1.trace_add("write", self.on_entry_update)
-        self.entry2.trace_add("write", self.on_entry_update)
-
         self.ask_student()
 
     def ask_student(self):
@@ -148,10 +141,7 @@ class AskDataFrame(CTkFrame):
         self.course_entry.place(relx=0.4, rely=0.42, relwidth=0.5)
         self.sem_label.place(relx=0.1, rely=0.54)
         self.sem_entry.place(relx=0.4, rely=0.54, relwidth=0.5)
-        try:
-            self.on_entry_update()
-        except:
-            pass
+        self.on_entry_update()
 
     def ask_teacher(self):
         self.sem_label.place_forget()
@@ -166,17 +156,21 @@ class AskDataFrame(CTkFrame):
         self.id_entry.place(relx=0.4, rely=0.3, relwidth=0.5)
         self.dep_label.place(relx=0.1, rely=0.42)
         self.dep_entry.place(relx=0.4, rely=0.42, relwidth=0.5)
-        try:
-            self.on_entry_update()
-        except:
-            pass
+        self.on_entry_update()
+
 
     def on_entry_update(self, *args):
-        if not self.toggle_button.state:
-            self.parent.show_student_table()
-        else:
-            self.parent.show_teacher_table()
-        self.forget_status()
+        def temp():
+            try:
+                if not self.toggle_button.state:
+                    self.parent.show_student_table()
+                else:
+                    self.parent.show_teacher_table()
+                self.forget_status()
+            except:
+                pass
+        Thread(target=temp, daemon=True).start()   
+            
 
     def get_data(self):
         data = {
@@ -242,7 +236,7 @@ class ShowCameraFrame(CTkFrame):
 
         self.cap = cv2.VideoCapture(self.get_camera_choice())
         self.running = True
-        self.camera_process_thread = threading.Thread(target=self.camera_thread)
+        self.camera_process_thread = Thread(target=self.camera_thread,daemon=True)
         self.camera_process_thread.start()
 
     def camera_thread(self):
@@ -518,32 +512,38 @@ class TableFrame(CTkFrame):
 
     
     def remove_student(self):
-        response = messagebox.askyesno("Confirm", "Are you sure you want to do this?")
-        if response:
-            for selected_item in self.student_tree.selection():
-                id = str(self.student_tree.item(selected_item)["values"][0].upper())
-                self.db.execute_query("DELETE FROM student WHERE ID = %s;", (id,))
-                try:
-                    shutil.rmtree(f"{os.getcwd()}/Student_Face/{id}")
-                except Exception:
-                    pass
-            self.after(10, self.show_student_data)
-        else:
-            self.after(10, self.show_student_data)
-
+        def temp():
+            response = messagebox.askyesno("Confirm", "Are you sure you want to do this?")
+            if response:
+                for selected_item in self.student_tree.selection():
+                    id = str(self.student_tree.item(selected_item)["values"][0]).upper()
+                    self.db.execute_query("DELETE FROM student WHERE ID = %s;", (id,))
+                    self.db.execute_query("DELETE FROM attendance WHERE ID = %s;", (id,))
+                    try:
+                        shutil.rmtree(f"{os.getcwd()}/Student_Face/{id}")
+                    except Exception:
+                        pass
+                self.after(10, self.show_student_data)
+            else:
+                self.after(10, self.show_student_data)
+        Thread(target=temp, daemon=True).start()
+        
     def remove_teacher(self):
-        response = messagebox.askyesno("Confirm", "Are you sure you want to do this?")
-        if response:
-            for selected_item in self.teacher_tree.selection():
-                id = str(self.teacher_tree.item(selected_item)["values"][0].upper())
-                self.db.execute_query("DELETE FROM teacher WHERE ID = %s;", (id,))
-                try:
-                    shutil.rmtree(f"{os.getcwd()}/Teacher_Face/{id}")
-                except Exception:
-                    pass
-            self.after(10, self.show_teacher_data)
-        else:
-            self.after(10, self.show_teacher_data)
+        def temp():
+            response = messagebox.askyesno("Confirm", "Are you sure you want to do this?")
+            if response:
+                for selected_item in self.teacher_tree.selection():
+                    id = str(self.teacher_tree.item(selected_item)["values"][0]).upper()
+                    self.db.execute_query("DELETE FROM teacher WHERE ID = %s;", (id,))
+                    self.db.execute_query("DELETE FROM attendance WHERE ID = %s;", (id,))
+                    try:
+                        shutil.rmtree(f"{os.getcwd()}/Teacher_Face/{id}")
+                    except Exception:
+                        pass
+                self.after(10, self.show_teacher_data)
+            else:
+                self.after(10, self.show_teacher_data)
+        Thread(target=temp, daemon=True).start()
 
     def clear_tree(self, tree: ttk.Treeview):
         for item in tree.get_children():

@@ -140,9 +140,9 @@ class HomeFrame(CTkFrame):
             if type(widget) == CTkButton:
                 widget.configure(state=DISABLED)
         
+        loading_animation = LoadingAnimation(self.parent)
         students_face_data = self.get_student_encodings()
         total = len(students_face_data)
-        loading_animation = LoadingAnimation(self.parent)
         for index,data in enumerate(students_face_data.items()):
             try:
                 time.sleep(0.05)

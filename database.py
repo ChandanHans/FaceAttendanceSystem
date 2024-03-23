@@ -1,7 +1,19 @@
 import mysql.connector
+from utility import *
+
+config = get_config()
+
 
 class Database:
-    def __init__(self, host, user, passwd, database, wait_timeout=28800, interactive_timeout=28800):
+    def __init__(
+        self,
+        host=config["HOST"],
+        user=config["USER"],
+        passwd=config["PASSWD"],
+        database=config["DB"],
+        wait_timeout=28800,
+        interactive_timeout=28800,
+    ):
         self.host = host
         self.user = user
         self.passwd = passwd

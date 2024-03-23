@@ -1,4 +1,4 @@
-from multiprocessing import Pool as ThreadPool
+from multiprocessing import Pool as ThreadPool, Process
 import pickle
 from threading import Thread
 import time
@@ -6,7 +6,7 @@ from customtkinter import *
 from PIL import Image
 
 import face_recognition
-from attendance import Attendance
+import attendance
 from database import Database
 from loading_animation import LoadingAnimation
 
@@ -18,7 +18,6 @@ class HomeFrame(CTkFrame):
         self.db = db
         self.parent = parent
         self.init_ui()
-        self.attendance = Attendance(self, self.db)
 
     def init_ui(self):
         # Load images
@@ -115,8 +114,10 @@ class HomeFrame(CTkFrame):
         for widget in self.winfo_children():
             if type(widget) == CTkButton:
                 widget.configure(state=DISABLED)
-                
-        self.attendance.take_attendance()
+        
+        process = Process(target=attendance.take_attendance)
+        process.daemon = True
+        process.start()
         
     
     # Utility Functions

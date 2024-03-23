@@ -3,7 +3,6 @@ from PIL import Image
 
 from multiprocessing import freeze_support
 from add_data_frame import AddDataFrame
-from attendance import Attendance
 from database import Database
 from home_frame import HomeFrame
 from data_frame import DataFrame
@@ -19,10 +18,9 @@ class FaceAttendanceSystem(CTk):
         self.title("FaceAttendanceSystem")
         self.minsize(900, 600)
         self.create_widgets()
-        if self.home_frame.checkbox_auto_start.get() == 1:
-            self.after(10,self.take_attendance)
-        else:
-            self.after(10,lambda : self.show_frame(self.home_frame))
+        # if self.home_frame.checkbox_auto_start.get() == 1:
+        #     self.home_frame.take_attendance()
+        self.after(10,lambda : self.show_frame(self.home_frame))
         
     def connect_db(self):
         self.db = Database(
@@ -63,6 +61,9 @@ class FaceAttendanceSystem(CTk):
         self.student_data_frame = DataFrame(self, self.db)
             
     def show_frame(self, frame_to_show: CTkFrame):
+        for widget in self.home_frame.winfo_children():
+            if type(widget) == CTkButton:
+                widget.configure(state=NORMAL)
         for widget in self.winfo_children():
             if widget != self.title_label:
                 widget.pack_forget()

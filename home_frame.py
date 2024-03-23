@@ -6,6 +6,7 @@ from customtkinter import *
 from PIL import Image
 
 import face_recognition
+from attendance import Attendance
 from database import Database
 from loading_animation import LoadingAnimation
 
@@ -17,7 +18,7 @@ class HomeFrame(CTkFrame):
         self.db = db
         self.parent = parent
         self.init_ui()
-        
+        self.attendance = Attendance(self, self.db)
 
     def init_ui(self):
         # Load images
@@ -54,7 +55,7 @@ class HomeFrame(CTkFrame):
         
         self.button_attendance = CTkButton(
             self,
-            command=lambda : self.parent.take_attendance(),
+            command = self.take_attendance,
             text="  Start Attendance  ",
             image=self.logo4_image,
             corner_radius=5,
@@ -83,7 +84,7 @@ class HomeFrame(CTkFrame):
         # ComboBox for camera selection inside the container
         self.camera_selection = CTkComboBox(
             self.camera_selection_container,
-            values=[str(i) for i in range(0, 20)],
+            values=["0","1","2","3"],
             state="readonly",
             width=60,
             command=self.save_choice,
@@ -110,11 +111,20 @@ class HomeFrame(CTkFrame):
         # Load previous choices if any
         self.load_previous_choices()
 
+    def take_attendance(self):
+        for widget in self.winfo_children():
+            if type(widget) == CTkButton:
+                widget.configure(state=DISABLED)
+                
+        self.attendance.take_attendance()
+        
+    
     # Utility Functions
     def save_choice(self, *args):
         choice = [
             self.camera_selection.get(),
             self.checkbox_auto_start.get(),
+            self.get_choice()[2]
         ]
         update_choice(choice)
 

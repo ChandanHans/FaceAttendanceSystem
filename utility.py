@@ -43,7 +43,7 @@ def get_config():
             showwarning("Warning", "Configuration file not found. A sample config will be created. Please fill it out.")
             # Create a sample configuration file
             sample_data = {
-                "CHOICE": ["0", 0, 0],
+                "CHOICE": ["0", 0, "rtsp://username:password@camera_ip_address/streaming/channels/1"],
                 "HOST": "",
                 "USER": "",
                 "PASSWD": "",

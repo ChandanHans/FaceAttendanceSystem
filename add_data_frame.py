@@ -332,6 +332,8 @@ class ShowCameraFrame(CTkFrame):
         self.running = False
 
     def get_camera_choice(self):
+        if get_config()["CHOICE"][0] == "3":
+            return get_config()["CHOICE"][2]
         return int(get_config()["CHOICE"][0])
 
 

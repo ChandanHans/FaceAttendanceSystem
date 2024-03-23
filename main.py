@@ -3,7 +3,7 @@ from PIL import Image
 
 from multiprocessing import freeze_support
 from add_data_frame import AddDataFrame
-from attendance_frame import AttendanceFrame
+from attendance import Attendance
 from database import Database
 from home_frame import HomeFrame
 from data_frame import DataFrame
@@ -60,22 +60,17 @@ class FaceAttendanceSystem(CTk):
         # Initialize frames
         self.home_frame = HomeFrame(self, self.db)
         self.add_data_frame = AddDataFrame(self, self.db)
-        self.attendance_frame = AttendanceFrame(self, self.db)
         self.student_data_frame = DataFrame(self, self.db)
             
     def show_frame(self, frame_to_show: CTkFrame):
         for widget in self.winfo_children():
             if widget != self.title_label:
                 widget.pack_forget()
-        if self.attendance_frame.running:
-            self.attendance_frame.stop()
         if frame_to_show == self.student_data_frame:
             self.student_data_frame.show_table()
         frame_to_show.pack(fill="both", expand=True)
 
-    def take_attendance(self):
-        self.show_frame(self.attendance_frame)
-        self.attendance_frame.take_attendance()
+
 
 if __name__ == "__main__":
     freeze_support()

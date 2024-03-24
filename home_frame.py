@@ -1,12 +1,13 @@
-from multiprocessing import Pool as ThreadPool, Process
+from multiprocessing import Event, Pool as ThreadPool, Process
 import pickle
 from threading import Thread
+import threading
 import time
 from customtkinter import *
 from PIL import Image
 
 import face_recognition
-import attendance
+import attendance 
 from database import Database
 from loading_animation import LoadingAnimation
 
@@ -17,7 +18,9 @@ class HomeFrame(CTkFrame):
         super().__init__(parent, **kwargs)
         self.db = db
         self.parent = parent
-        self.init_ui()
+        self.stop_event = Event()
+        self.init_ui()      
+        self.after(1000,self.auto_start)
 
     def init_ui(self):
         # Load images
@@ -30,7 +33,7 @@ class HomeFrame(CTkFrame):
 
         self.button_add_student = CTkButton(
             self,
-            command=lambda: self.parent.show_frame(self.parent.add_data_frame),
+            command= self.parent.show_add_data_frame,
             text="  Create Profile       ",
             image=self.logo2_image,
             corner_radius=5,
@@ -66,7 +69,7 @@ class HomeFrame(CTkFrame):
 
         self.button_student_data = CTkButton(
             self,
-            command=lambda: self.parent.show_frame(self.parent.student_data_frame),
+            command=self.parent.show_data_frame,
             text="  View Attendance ",
             image=self.logo3_image,
             corner_radius=5,
@@ -110,12 +113,21 @@ class HomeFrame(CTkFrame):
         # Load previous choices if any
         self.load_previous_choices()
 
+    def auto_start(self):
+        if self.checkbox_auto_start.get() == 1:
+            self.take_attendance()
+    
+    def stop_attendance(self):
+        self.stop_event.set()
+    
+    
     def take_attendance(self):
+        global stop_event
         for widget in self.winfo_children():
             if type(widget) == CTkButton:
                 widget.configure(state=DISABLED)
-        
-        process = Process(target=attendance.take_attendance)
+        self.stop_event.clear()
+        process = Process(target=attendance.take_attendance, args=(self.stop_event,))
         process.daemon = True
         process.start()
         

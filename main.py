@@ -18,9 +18,7 @@ class FaceAttendanceSystem(CTk):
         self.title("FaceAttendanceSystem")
         self.minsize(900, 600)
         self.create_widgets()
-        # if self.home_frame.checkbox_auto_start.get() == 1:
-        #     self.home_frame.take_attendance()
-        self.after(10,lambda : self.show_frame(self.home_frame))
+        self.after(100, self.show_home_frame)
         
     def connect_db(self):
         self.db = Database(
@@ -48,7 +46,7 @@ class FaceAttendanceSystem(CTk):
             text="",
             width=10,
             height=10,
-            command=lambda: self.show_frame(self.home_frame),
+            command=self.back,
             fg_color="#B188A8",
             bg_color="#B188A8",
             hover_color="#886981",
@@ -58,18 +56,30 @@ class FaceAttendanceSystem(CTk):
         # Initialize frames
         self.home_frame = HomeFrame(self, self.db)
         self.add_data_frame = AddDataFrame(self, self.db)
-        self.student_data_frame = DataFrame(self, self.db)
-            
-    def show_frame(self, frame_to_show: CTkFrame):
+        self.data_frame = DataFrame(self, self.db)
+    
+    def show_frame(self,frame_to_show):
         for widget in self.home_frame.winfo_children():
             if type(widget) == CTkButton:
                 widget.configure(state=NORMAL)
         for widget in self.winfo_children():
             if widget != self.title_label:
                 widget.pack_forget()
-        if frame_to_show == self.student_data_frame:
-            self.student_data_frame.show_table()
         frame_to_show.pack(fill="both", expand=True)
+    
+    def show_home_frame(self):
+        self.show_frame(self.home_frame)
+     
+    def show_add_data_frame(self):
+        self.show_frame(self.add_data_frame)
+    
+    def show_data_frame(self):
+        self.show_frame(self.data_frame)
+        self.data_frame.show_table()
+        
+    def back(self):
+        self.home_frame.stop_attendance()
+        self.show_frame(self.home_frame)
 
 
 

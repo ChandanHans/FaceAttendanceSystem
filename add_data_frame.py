@@ -1,16 +1,16 @@
+from multiprocessing import Queue
 import os
 import shutil
 import cv2
 import tkinter as tk
-from threading import Thread
+from threading import Thread,Lock
 from PIL import Image
 from tkinter import ttk, messagebox
-import face_recognition
 from customtkinter import *
 from database import Database
 from toggle_button import ToggleButton
 from utility import *
-
+import dlib
 
 class AddDataFrame(CTkFrame):
     def __init__(self, parent, db: Database, **kwargs):
@@ -29,11 +29,11 @@ class AddDataFrame(CTkFrame):
 
     def show_student_table(self):
         data = self.get_input_data()
-        self.table_frame.show_student_data(id=data["id"], name=data["name"])
+        self.table_frame.show_student_data()
 
     def show_teacher_table(self):
         data = self.get_input_data()
-        self.table_frame.show_teacher_data(id=data["id"], name=data["name"])
+        self.table_frame.show_teacher_data()
 
     def start_camera(self):
         data = self.get_input_data()
@@ -46,7 +46,13 @@ class AddDataFrame(CTkFrame):
         else:
             self.ask_data_frame.submit_button.configure(state=DISABLED)
             self.show_camera_frame.start_camera(data)
+            
+    def show_student_data(self):
+        self.table_frame.show_student_data()
 
+    def show_teacher_data(self):
+        self.table_frame.show_teacher_data()
+    
     def add_profile(self):
         data = self.get_input_data()
         if data["student"]:
@@ -57,6 +63,7 @@ class AddDataFrame(CTkFrame):
                     Name = VALUES(Name), Course = VALUES(Course), Sem = VALUES(Sem);""",
                 (data["id"], data["name"], data["course"], data["sem"]),
             )
+            self.show_student_data()
         else:
             success = self.db.execute_query(
                 """INSERT INTO teacher (ID, Name, Dep)
@@ -65,7 +72,7 @@ class AddDataFrame(CTkFrame):
                     Name = VALUES(Name), Dep = VALUES(Dep);""",
                 (data["id"], data["name"], data["dep"]),
             )
-
+            self.show_teacher_data()
         if success:
             self.ask_data_frame.set_success_logo()
         else:
@@ -88,7 +95,7 @@ class AskDataFrame(CTkFrame):
         self.toggle_button = ToggleButton(
             self,
             texts=("Teacher", "Student"),
-            callbacks=(self.ask_student, self.ask_teacher),
+            callbacks=(self.ask_student, self.ask_teacher), font=("Arial", 15, "bold")
         )
         self.toggle_button.place(relx=0.3, rely=0.87, anchor=CENTER)
 
@@ -120,7 +127,7 @@ class AskDataFrame(CTkFrame):
         )
 
         self.submit_button = CTkButton(
-            self, text="Add Profile", command=self.parent.start_camera
+            self, text="Add Profile", command=self.parent.start_camera, font=("Arial", 15, "bold")
         )
         self.submit_button.place(relx=0.7, rely=0.87, anchor="center")
 
@@ -237,76 +244,80 @@ class ShowCameraFrame(CTkFrame):
 
         if not os.path.exists(self.profile_folder_path):
             os.makedirs(self.profile_folder_path)
-
-        self.cap = cv2.VideoCapture(self.get_camera_choice())
+            
+        self.queue = Queue(maxsize=1)
         self.running = True
         self.camera_process_thread = Thread(target=self.camera_thread,daemon=True)
         self.camera_process_thread.start()
+        self.update_frame()
 
     def camera_thread(self):
         self.frame_count = 0
+        self.cap = cv2.VideoCapture(self.get_camera_choice())
+        detector = dlib.get_frontal_face_detector()
         while self.running:
             ret, frame = self.cap.read()
             if not ret:
                 break
-            processed_frame = self.process_frame(frame)
-            self.after(10, lambda: self.update_frame(processed_frame))
-            if self.frame_count >= 100:
-                self.parent.add_profile()
-                break
-        if self.cap is not None:
-            self.cap.release()
-        if self.frame_count < 10:
+            if self.queue.empty():
+                frame2 = cv2.resize(frame, (400, 300))
+                face_locations = detector(frame2)
+                if face_locations and len(face_locations) == 1:
+                    face_location = face_locations[0]
+                    top, right, bottom, left = face_location.top(),face_location.right(),face_location.bottom(),face_location.left()
+                    scale_width = frame.shape[1] / 400
+                    scale_height = frame.shape[0] / 300
+
+                    # Scale the face location coordinates
+                    top_scaled = int(top * scale_height)
+                    right_scaled = int(right * scale_width)
+                    bottom_scaled = int(bottom * scale_height)
+                    left_scaled = int(left * scale_width)
+
+                    # Apply margin and ensure coordinates are within frame bounds for the original frame
+                    margin = 50
+                    top_final = max(top_scaled - margin, 0)
+                    right_final = min(right_scaled + margin, frame.shape[1])
+                    bottom_final = min(bottom_scaled + margin, frame.shape[0])
+                    left_final = max(left_scaled - margin, 0)
+                    face = frame[top_final:bottom_final, left_final:right_final]
+                    if self.start:
+                        self.frame_count += 1
+                        file_name_path = (f"{self.profile_folder_path}/{str(self.frame_count)}.jpg")
+                        cv2.imwrite(file_name_path, face)
+                    cv2.rectangle(frame2, (left, top), (right, bottom), (0, 255, 0), 2)
+                    cv2.putText(
+                        frame2,
+                        str(self.frame_count),
+                        (100, 200),
+                        cv2.FONT_HERSHEY_COMPLEX,
+                        2,
+                        (0, 255, 0),
+                        2,
+                    )
+                if self.frame_count >= 100:
+                    self.parent.add_profile()
+                    break     
+                self.queue.put(frame2)
+            
+        if self.frame_count < 100:
             shutil.rmtree(self.profile_folder_path)
             self.parent.ask_data_frame.set_cancle_logo()
 
         self.start = False
         self.delete_widgets()
-        self.parent.table_frame.show_student_data()
-
-    def process_frame(self, frame: cv2.typing.MatLike):
-        face_locations = face_recognition.face_locations(frame)
-        for face_location in face_locations:
-            if len(face_locations) == 1:
-                top, right, bottom, left = face_locations[0]
-                # Save the face
-                margin = 50  # You can adjust this value
-                top1 = max(top - margin, 0)
-                right1 = min(right + margin, frame.shape[1])
-                bottom1 = min(bottom + margin, frame.shape[0])
-                left1 = max(left - margin, 0)
-                face = frame[top1:bottom1, left1:right1]
-                if self.start:
-                    self.frame_count += 1
-                    file_name_path = (
-                        f"{self.profile_folder_path}/{str(self.frame_count)}.jpg"
-                    )
-                    cv2.imwrite(file_name_path, face)
-                cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
-                cv2.putText(
-                    frame,
-                    str(self.frame_count),
-                    (100, 200),
-                    cv2.FONT_HERSHEY_COMPLEX,
-                    2,
-                    (0, 255, 0),
-                    2,
-                )
-            elif len(face_locations) > 1:
-                top, right, bottom, left = face_location
-                cv2.rectangle(frame, (left, top), (right, bottom), (255, 0, 0), 2)
-        return frame
-
-    def update_frame(self, frame):
-        try:
+    
+    def update_frame(self):
+        if not self.queue.empty():
+            frame = self.queue.get()
             image_height = self.winfo_height()
             image_width = self.winfo_width()
             cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
             img = Image.fromarray(cv2image)
             imgtk = CTkImage(img, size=(image_width, image_height))
             self.image_label.configure(image=imgtk)
-        except:
-            pass
+        if self.running:
+            self.image_label.after(1, self.update_frame)
 
     def save_face(self):
         data = self.parent.get_input_data()
@@ -323,7 +334,6 @@ class ShowCameraFrame(CTkFrame):
     def delete_widgets(self):
         if self.cap is not None:
             self.cap.release()
-            self.cap = None
         self.image_label.pack_forget()
         self.button_frame.pack_forget()
         self.parent.ask_data_frame.submit_button.configure(state=NORMAL)
@@ -335,7 +345,6 @@ class ShowCameraFrame(CTkFrame):
         if get_config()["CHOICE"][0] == "3":
             return get_config()["CHOICE"][2]
         return int(get_config()["CHOICE"][0])
-
 
 class TableFrame(CTkFrame):
     def __init__(self, parent, db: Database, **kwargs):
@@ -552,8 +561,11 @@ class TableFrame(CTkFrame):
         Thread(target=temp, daemon=True).start()
 
     def clear_tree(self, tree: ttk.Treeview):
-        for item in tree.get_children():
-            tree.delete(item)
+        # Assuming 'treeview' is your ttk.Treeview object
+        items = tree.get_children()
+        if items:
+            tree.delete(*items)
+
 
     def show_student_data(self, *args, **kwargs):
         # Extracting keyword arguments with default values

@@ -16,3 +16,5 @@
 /dist
 /Teacher_Face
 /transfer db.py
+/p
+/config copy.json

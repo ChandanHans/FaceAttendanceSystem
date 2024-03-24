@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from tkcalendar import Calendar
 from database import Database
 from openpyxl import Workbook
-
+from toggle_button import ToggleButton
 from utility import *
 
 
@@ -38,6 +38,7 @@ class DataFrame(CTkFrame):
             values=["ALL", "BSC", "BCA", "BBA"],
             bg_color="#B188A8",
             state="readonly",
+            width=100
         )
         self.filter_course_entry.set("ALL")
         self.filter_course_entry.pack(side="left")
@@ -52,12 +53,22 @@ class DataFrame(CTkFrame):
             values=["ALL", "1", "2", "3", "4", "5", "6"],
             bg_color="#B188A8",
             state="readonly",
+            width=100
         )
         self.filter_sem_entry.set("ALL")
         self.filter_sem_entry.pack(side="left")
 
+        self.toggle_button = ToggleButton(
+            self.filter_frame,
+            texts=("Switch to Teachers", "Switch to Students"),
+            font=("Arial", 15, "bold"),
+            width = 200,
+            callbacks=(self.show_table, self.show_table),
+        )
+        self.toggle_button.place(rely=0.5, relx=0.5, anchor="center")
+        
         self.max_date = StringVar()
-        self.max_date_entry = CTkEntry(self.filter_frame, textvariable=self.max_date)
+        self.max_date_entry = CTkEntry(self.filter_frame, textvariable=self.max_date, width=100)
         self.max_date_entry.pack(side="right", padx=10)
         self.max_date_entry.bind(
             "<Button-1>", lambda event: self.open_date_picker(event, self.max_date)
@@ -70,7 +81,7 @@ class DataFrame(CTkFrame):
         self.max_date_label.pack(side="right")
 
         self.min_date = StringVar()
-        self.min_date_entry = CTkEntry(self.filter_frame, textvariable=self.min_date)
+        self.min_date_entry = CTkEntry(self.filter_frame, textvariable=self.min_date, width=100)
         self.min_date_entry.pack(side="right", padx=10)
         self.min_date_entry.bind(
             "<Button-1>", lambda event: self.open_date_picker(event, self.min_date)
@@ -120,10 +131,10 @@ class DataFrame(CTkFrame):
             self.tree.configure(yscrollcommand=yscroll.set, xscrollcommand=xscroll.set)
 
             dates = [datetime.strptime(date, "%Y-%m-%d").strftime("%d/%m/%Y") for date in self.dates]
-            self.tree["columns"] = ["Roll", "Name"] + dates
+            self.tree["columns"] = ["ID", "Name"] + dates
             self.tree.column("#0", width=0, stretch=tk.NO)
-            self.tree.column("Roll", anchor=tk.W, width=100)
-            self.tree.heading("Roll", text="Roll", anchor=tk.W)
+            self.tree.column("ID", anchor=tk.W, width=100)
+            self.tree.heading("ID", text="ID", anchor=tk.W)
             self.tree.column("Name", anchor=tk.W, width=150)
             self.tree.heading("Name", text="Name", anchor=tk.W)
             for i in dates:
@@ -174,14 +185,20 @@ class DataFrame(CTkFrame):
     def generate_query(self):
         sem = self.filter_sem_entry.get()
         course = self.filter_course_entry.get()
+        clicked = self.toggle_button.state
         date_cases = ",\n    ".join(
             [
-                f"MAX(CASE WHEN a.date = '{date}' THEN 'P' ELSE 'A' END) AS `{date}`"
+                f"""
+                MAX(
+                    CASE
+                        WHEN a.date = '{date}' THEN {"DATE_FORMAT(a.time, '%l:%i %p') ELSE '-'" if clicked else "'P' ELSE 'A'"}  
+                        END
+                ) AS `{date}`"""
                 for date in self.dates
             ]
         )
-
-        query = f"""
+        if not clicked:
+            query = f"""
 SELECT
     s.ID,
     s.Name,
@@ -191,7 +208,22 @@ FROM
 LEFT JOIN
     attendance a ON s.ID = a.ID
 WHERE
-    s.Sem like '{'%' if sem == "ALL" else sem}' AND s.Course like '{'%' if course == "ALL" else course}'
+    1=1
+    AND s.Sem like '{'%' if sem == "ALL" else sem}' AND s.Course like '{'%' if course == "ALL" else course}'
+GROUP BY
+    s.ID,
+    s.Name
+"""
+        else:
+            query = f"""
+SELECT
+    s.ID,
+    s.Name,
+    {date_cases}
+FROM
+    teacher s
+LEFT JOIN
+    attendance a ON s.ID = a.ID
 GROUP BY
     s.ID,
     s.Name

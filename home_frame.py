@@ -110,6 +110,13 @@ class HomeFrame(CTkFrame):
         )
         self.checkbox_auto_start.place(relx=0.5, rely=0.78, anchor="center")
 
+        self.credit_label = CTkLabel(
+            self,
+            text="Developed By: Chandrakanta Hans",
+            font=("Arial", 15, "bold")
+        )
+        self.credit_label.place(relx=0.97, rely=0.97,anchor="se")
+        
         # Load previous choices if any
         self.load_previous_choices()
 

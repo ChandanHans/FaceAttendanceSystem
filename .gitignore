@@ -18,3 +18,6 @@
 /transfer db.py
 /p.py
 /config_copy.json
+/output.log
+/Saved_Files
+/face_data.pkl

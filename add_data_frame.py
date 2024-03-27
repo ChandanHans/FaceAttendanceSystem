@@ -1,9 +1,10 @@
-from multiprocessing import Queue
+
 import os
+from queue import Queue
 import shutil
 import cv2
 import tkinter as tk
-from threading import Thread,Lock
+from threading import Thread
 from PIL import Image
 from tkinter import ttk, messagebox
 from customtkinter import *
@@ -28,11 +29,9 @@ class AddDataFrame(CTkFrame):
         self.table_frame.place(relx=0.4, rely=0, relwidth=0.6, relheight=1)
 
     def show_student_table(self):
-        data = self.get_input_data()
         self.table_frame.show_student_data()
 
     def show_teacher_table(self):
-        data = self.get_input_data()
         self.table_frame.show_teacher_data()
 
     def start_camera(self):
@@ -42,7 +41,7 @@ class AddDataFrame(CTkFrame):
             all([data["id"], data["name"], data["course"], data["sem"]])
             or all([data["id"], data["name"], data["dep"]])
         ):
-            self.ask_data_frame.set_cancle_logo()
+            self.ask_data_frame.set_cancel_logo()
         else:
             self.ask_data_frame.submit_button.configure(state=DISABLED)
             self.show_camera_frame.start_camera(data)
@@ -76,7 +75,7 @@ class AddDataFrame(CTkFrame):
         if success:
             self.ask_data_frame.set_success_logo()
         else:
-            self.ask_data_frame.set_cancle_logo()
+            self.ask_data_frame.set_cancel_logo()
 
     def get_input_data(self):
         return self.ask_data_frame.get_data()
@@ -199,7 +198,7 @@ class AskDataFrame(CTkFrame):
     def forget_status(self):
         self.status_label.place_forget()
 
-    def set_cancle_logo(self):
+    def set_cancel_logo(self):
         self.status_label.configure(image=self.cancel_logo)
         self.status_label.place(relx=0.5, rely=0.75, anchor="center")
 
@@ -217,7 +216,8 @@ class ShowCameraFrame(CTkFrame):
         self.frame_count = 0
         self.start = False
         self.configure(border_width=4, border_color="#5665EF", corner_radius=0)
-
+        self.safe_to_close = True
+        
     def create_widgets(self):
         self.button_frame = CTkLabel(self, text="", height=30)
         self.button_frame.pack(fill="x", padx=6, pady=6, side="bottom")
@@ -252,21 +252,26 @@ class ShowCameraFrame(CTkFrame):
         self.update_frame()
 
     def camera_thread(self):
+        self.safe_to_close = False
         self.frame_count = 0
         self.cap = cv2.VideoCapture(self.get_camera_choice())
         detector = dlib.get_frontal_face_detector()
+        frame_set = False
         while self.running:
             ret, frame = self.cap.read()
             if not ret:
                 break
             if self.queue.empty():
-                frame2 = cv2.resize(frame, (400, 300))
+                if not frame_set:
+                    frame_height = int(frame.shape[0]/3)
+                    frame_width = int(frame.shape[1]/3)
+                    scale_width = frame.shape[1] / frame_width
+                    scale_height = frame.shape[0] / frame_height
+                frame2 = cv2.resize(frame, (frame_width,frame_height))
                 face_locations = detector(frame2)
                 if face_locations and len(face_locations) == 1:
                     face_location = face_locations[0]
                     top, right, bottom, left = face_location.top(),face_location.right(),face_location.bottom(),face_location.left()
-                    scale_width = frame.shape[1] / 400
-                    scale_height = frame.shape[0] / 300
 
                     # Scale the face location coordinates
                     top_scaled = int(top * scale_height)
@@ -299,13 +304,16 @@ class ShowCameraFrame(CTkFrame):
                     self.parent.add_profile()
                     break     
                 self.queue.put(frame2)
-            
+                if not frame_set:
+                    frame_set = True
         if self.frame_count < 100:
             shutil.rmtree(self.profile_folder_path)
-            self.parent.ask_data_frame.set_cancle_logo()
+            self.parent.ask_data_frame.set_cancel_logo()
 
         self.start = False
         self.delete_widgets()
+
+        self.safe_to_close = True
     
     def update_frame(self):
         if not self.queue.empty():
@@ -316,8 +324,9 @@ class ShowCameraFrame(CTkFrame):
             img = Image.fromarray(cv2image)
             imgtk = CTkImage(img, size=(image_width, image_height))
             self.image_label.configure(image=imgtk)
+        
         if self.running:
-            self.image_label.after(1, self.update_frame)
+            self.image_label.after(10, self.update_frame)
 
     def save_face(self):
         data = self.parent.get_input_data()
@@ -531,7 +540,7 @@ class TableFrame(CTkFrame):
             response = messagebox.askyesno("Confirm", "Are you sure you want to do this?")
             if response:
                 for selected_item in self.student_tree.selection():
-                    id = str(self.student_tree.item(selected_item)["values"][0]).upper()
+                    id = self.student_tree.item(selected_item)["values"][0]
                     self.db.execute_query("DELETE FROM student WHERE ID = %s;", (id,))
                     self.db.execute_query("DELETE FROM attendance WHERE ID = %s;", (id,))
                     try:
@@ -548,7 +557,7 @@ class TableFrame(CTkFrame):
             response = messagebox.askyesno("Confirm", "Are you sure you want to do this?")
             if response:
                 for selected_item in self.teacher_tree.selection():
-                    id = str(self.teacher_tree.item(selected_item)["values"][0]).upper()
+                    id = self.teacher_tree.item(selected_item)["values"][0]
                     self.db.execute_query("DELETE FROM teacher WHERE ID = %s;", (id,))
                     self.db.execute_query("DELETE FROM attendance WHERE ID = %s;", (id,))
                     try:

@@ -20,7 +20,7 @@ class HomeFrame(CTkFrame):
         self.parent = parent
         self.stop_event = Event()
         self.init_ui()      
-        self.after(1000,self.auto_start)
+        self.after(5000,self.auto_start)
 
     def init_ui(self):
         # Load images
@@ -129,7 +129,6 @@ class HomeFrame(CTkFrame):
     
     
     def take_attendance(self):
-        global stop_event
         for widget in self.winfo_children():
             if type(widget) == CTkButton:
                 widget.configure(state=DISABLED)
@@ -160,7 +159,6 @@ class HomeFrame(CTkFrame):
     
     def process_for_folder(self,folder):
         student_image_paths = [os.path.join(folder, image_file) for image_file in os.listdir(folder)]
-        # Use ThreadPoolExecutor to execute the function in threads
         with ThreadPool() as pool:
             results = pool.map(self.get_face_encoding, student_image_paths)
         return [item for item in results if item is not None]
@@ -198,12 +196,24 @@ class HomeFrame(CTkFrame):
                     self.save_teacher_encodings(id,encodings)
             except FileNotFoundError:
                 showwarning("Warning", f"Missing folder for {id}")
-        
+                
+        loading_animation.change_text(f"Saving Data")
+        self.save_encodinds_locally()
         time.sleep(2)
         loading_animation.stop()
         for widget in self.winfo_children():
             if type(widget) == CTkButton:
                 widget.configure(state=NORMAL)
+    
+    def save_encodinds_locally(self):
+        data = []
+        profiles = self.db.fetch_data("SELECT ID, Name, Encoding from student UNION ALL SELECT ID, Name, Encoding from teacher;")
+        for profile in profiles:
+            if profile[2] is not None:
+                id, name, encoding = profile[0], profile[1], pickle.loads(profile[2])
+                data.append((id, name, encoding))
+        with open('face_data.pkl', 'wb') as file:
+            pickle.dump(data, file)
     
     def save_student_encodings(self,id,encodings):
         binary_encoding = pickle.dumps(encodings)

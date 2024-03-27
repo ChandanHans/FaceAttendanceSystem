@@ -19,6 +19,7 @@ class FaceAttendanceSystem(CTk):
         self.minsize(900, 600)
         self.create_widgets()
         self.after(100, self.show_home_frame)
+        self.protocol("WM_DELETE_WINDOW", self.on_closing)
         
     def connect_db(self):
         self.db = Database(
@@ -81,6 +82,9 @@ class FaceAttendanceSystem(CTk):
         self.home_frame.stop_attendance()
         self.show_frame(self.home_frame)
 
+    def on_closing(self):
+        self.add_data_frame.show_camera_frame.stop_camera()
+        self.destroy()
 
 
 if __name__ == "__main__":
@@ -88,3 +92,4 @@ if __name__ == "__main__":
     app = FaceAttendanceSystem()
     app.after(0, lambda: app.state('zoomed'))
     app.mainloop()
+    sys.exit()

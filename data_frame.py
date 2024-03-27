@@ -164,6 +164,8 @@ class DataFrame(CTkFrame):
 
     def save_tree(self, tree: ttk.Treeview):
         try:
+            if not os.path.exists("./Saved files"):
+                os.makedirs("./Saved_Files")
             wb = Workbook()
             ws = wb.active
             headers = tree["columns"]
@@ -176,10 +178,14 @@ class DataFrame(CTkFrame):
             sem = self.filter_sem_entry.get()
             dt1 = datetime.strptime(self.min_date.get(), "%Y-%m-%d").strftime("%d-%m-%y")
             dt2 = datetime.strptime(self.max_date.get(), "%Y-%m-%d").strftime("%d-%m-%y")
-            file_name = f"{course} {sem} {dt1}_{dt2}.xlsx".lower()
+            if not self.toggle_button.state:
+                file_name = f"./Saved_Files/{course} {sem} {dt1}_{dt2}.xlsx"
+            else:
+                file_name = f"./Saved_Files/Teachers {dt1}_{dt2}.xlsx"
             wb.save(file_name)
             messagebox.showinfo("Info", "File saved.")
-        except:
+        except Exception as e:
+            print(e)
             messagebox.showerror("Error", "File couldn't be saved.")
 
     def generate_query(self):

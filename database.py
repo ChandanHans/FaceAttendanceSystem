@@ -1,7 +1,32 @@
+import sys
 import mysql.connector
-from utility import *
+from mysql.connector import Error
+import logging
+from utility import get_config
 
 config = get_config()
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("output.log"),  # Log to this file
+        logging.StreamHandler()  # Log to console (optional, remove if not needed)
+    ]
+)
+class PrintLogger:
+    """Logger that captures print statements and redirects them to logging."""
+    def write(self, message):
+        # Only log if there is a message (not just a new line)
+        if message.rstrip() != "":
+            logging.info(message.rstrip())
+    
+    def flush(self):
+        # This flush method is required for file-like object
+        pass
+
+# Redirect standard output to PrintLogger
+sys.stdout = PrintLogger()
 
 
 class Database:
@@ -20,50 +45,57 @@ class Database:
         self.database = database
         self.wait_timeout = wait_timeout
         self.interactive_timeout = interactive_timeout
+        self.conn = None
         self.connect()
 
     def connect(self):
-        self.conn = mysql.connector.connect(
-            host=self.host, user=self.user, passwd=self.passwd, database=self.database
-        )
-        self.execute_query("SET time_zone = '+05:30';")
-        self.set_session_timeouts()
+        try:
+            if not self.conn or not self.conn.is_connected():
+                self.conn = mysql.connector.connect(
+                    host=self.host, user=self.user, passwd=self.passwd, database=self.database
+                )
+                logging.info("Database connection established.")
+                self.execute_query("SET time_zone = '+05:30';")
+                self.set_session_timeouts()
+        except Exception as e:
+            print(e)
+
 
     def set_session_timeouts(self):
         """Set session-specific timeout values for the MySQL connection."""
         query = "SET SESSION wait_timeout = %s, SESSION interactive_timeout = %s"
         params = (self.wait_timeout, self.interactive_timeout)
-        with self.conn.cursor() as cursor:
-            cursor.execute(query, params)
+        self.execute_query(query, params)
 
     def fetch_data(self, query, params=()):
         """Fetch data from the database using a SELECT query."""
-        try:
-            if self.conn is None:
-                self.connect()
-            with self.conn.cursor() as cursor:
-                cursor.execute(query, params)
-                result = cursor.fetchall()
-            return result
-        except Exception as e:
-            print(e)
-            return []
+        if self.conn and self.conn.is_connected():
+            try:
+                with self.conn.cursor() as cursor:
+                    cursor.execute(query, params)
+                    result = cursor.fetchall()
+                return result
+            except Exception as e:
+                print(e)
+                return []
+        self.connect()
 
     def execute_query(self, query, params=()):
         """Execute a given SQL query (INSERT, UPDATE, DELETE) and return True if successful."""
-        if self.conn is None:
-            self.connect()
-        try:
-            with self.conn.cursor() as cursor:
-                cursor.execute(query, params)
-            self.conn.commit()
-            return True  # Indicates that the query and commit were successful
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            self.conn.rollback()  # Roll back the transaction on error
-            return False
-
+        if self.conn and self.conn.is_connected():
+            try:
+                with self.conn.cursor() as cursor:
+                    cursor.execute(query, params)
+                self.conn.commit()
+                return True
+            except Exception as e:
+                print(e)
+                if self.conn and self.conn.is_connected():
+                    self.conn.rollback()
+                return False
+        self.connect()
     def close(self):
         """Close the database connection."""
-        if self.conn:
+        if self.conn and self.conn.is_connected():
             self.conn.close()
+            logging.info("Database connection closed.")

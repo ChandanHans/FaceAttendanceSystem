@@ -263,10 +263,9 @@ class ShowCameraFrame(CTkFrame):
                 break
             if self.queue.empty():
                 if not frame_set:
-                    frame_height = int(frame.shape[0]/3)
-                    frame_width = int(frame.shape[1]/3)
-                    scale_width = frame.shape[1] / frame_width
-                    scale_height = frame.shape[0] / frame_height
+                    scale = 3
+                    frame_height = frame.shape[0]//scale
+                    frame_width = frame.shape[1]//scale
                 frame2 = cv2.resize(frame, (frame_width,frame_height))
                 face_locations = detector(frame2)
                 if face_locations and len(face_locations) == 1:
@@ -274,10 +273,10 @@ class ShowCameraFrame(CTkFrame):
                     top, right, bottom, left = face_location.top(),face_location.right(),face_location.bottom(),face_location.left()
 
                     # Scale the face location coordinates
-                    top_scaled = int(top * scale_height)
-                    right_scaled = int(right * scale_width)
-                    bottom_scaled = int(bottom * scale_height)
-                    left_scaled = int(left * scale_width)
+                    top_scaled = int(top * scale)
+                    right_scaled = int(right * scale)
+                    bottom_scaled = int(bottom * scale)
+                    left_scaled = int(left * scale)
 
                     # Apply margin and ensure coordinates are within frame bounds for the original frame
                     margin = 50
@@ -294,9 +293,9 @@ class ShowCameraFrame(CTkFrame):
                     cv2.putText(
                         frame2,
                         str(self.frame_count),
-                        (100, 200),
+                        (frame_height//4, frame_width//4),
                         cv2.FONT_HERSHEY_COMPLEX,
-                        2,
+                        1,
                         (0, 255, 0),
                         2,
                     )

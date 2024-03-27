@@ -44,6 +44,7 @@ def get_config():
             # Create a sample configuration file
             sample_data = {
                 "CHOICE": ["0", 0, "rtsp://username:password@camera_ip_address"],
+                "SCALE": 0.2,
                 "HOST": "",
                 "USER": "",
                 "PASSWD": "",

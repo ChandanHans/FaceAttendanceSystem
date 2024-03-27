@@ -46,8 +46,9 @@ def take_attendance(stop_event):
         frame = get_latest_frame()
         if frame is not None:
             if not frame_set:
-                frame_height = int(frame.shape[0]/3)
-                frame_width = int(frame.shape[1]/3)
+                scale = get_config()["SCALE"]
+                frame_height = int(frame.shape[0] * scale)
+                frame_width = int(frame.shape[1] * scale)
             frame = cv2.resize(frame, (frame_width,frame_height))
             face_detected = detector(frame)
             if face_detected:
@@ -60,7 +61,7 @@ def take_attendance(stop_event):
                             name = profile[1]
                             detected_id_queue.put(id)
                             font = cv2.FONT_HERSHEY_SIMPLEX
-                            cv2.putText(frame, name, (left, bottom - 6), font, 1, (255, 0, 0), 1)
+                            cv2.putText(frame, name, (left, bottom + 20), font, 1 * scale, (0, 0, 255), 2)
                             break
                     cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
             latest_stream_frame = frame
@@ -126,6 +127,7 @@ def generate_video_stream():
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 app = Flask(__name__)
+@app.route('/')
 def video_feed():
     return Response(generate_video_stream(),
                     mimetype='multipart/x-mixed-replace; boundary=frame')

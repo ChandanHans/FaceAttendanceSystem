@@ -8,9 +8,9 @@ config = get_config()
 
 logging.basicConfig(
     level=logging.INFO,
-    format='%(levelname)s - %(message)s',
+    format='%(message)s',
     handlers=[
-        logging.FileHandler("output.log"),  # Log to this file
+        logging.FileHandler("output.log", mode="w"),  # Log to this file
         logging.StreamHandler()  # Log to console (optional, remove if not needed)
     ]
 )
@@ -94,6 +94,7 @@ class Database:
                     self.conn.rollback()
                 return False
         self.connect()
+        
     def close(self):
         """Close the database connection."""
         if self.conn and self.conn.is_connected():

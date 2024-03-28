@@ -1,5 +1,6 @@
 import pickle
 from queue import Queue
+import socket
 import threading
 from time import sleep
 from customtkinter import *
@@ -17,6 +18,18 @@ latest_frame = None
 latest_stream_frame = None
 frame_lock = threading.Lock()
 detected_id_queue = Queue()
+
+def get_local_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = str(s.getsockname()[0])
+        s.close()
+    except Exception as e:
+        ip = "ERROR"
+    return ip
+
+streaming_ip = get_local_ip() + ":5000"
 
 def capture_frames(stream_url):
     global latest_frame , cap
@@ -65,10 +78,10 @@ def take_attendance(stop_event):
                             break
                     cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
             latest_stream_frame = frame
-            cv2.imshow("Attendance",frame)
+            cv2.imshow(streaming_ip,frame)
             if not frame_set:
-                cv2.namedWindow('Attendance', cv2.WINDOW_NORMAL)
-                cv2.setWindowProperty('Attendance', cv2.WND_PROP_TOPMOST, 1)
+                cv2.namedWindow(streaming_ip, cv2.WINDOW_NORMAL)
+                cv2.setWindowProperty(streaming_ip, cv2.WND_PROP_TOPMOST, 1)
                 frame_set = True
         if cv2.waitKey(1) == ord('q'):
             break

@@ -257,8 +257,10 @@ GROUP BY
         cal.bind("<<CalendarSelected>>", on_date_select)
 
     def set_date_range(self):
-        self.recent_date = datetime.now()
+        self.recent_date = datetime.date(datetime.now())
         self.oldest_date = self.db.fetch_data("SELECT MIN(Date) from attendance")[0][0]
+        if not self.oldest_date:
+            self.oldest_date = self.recent_date
 
     def set_default_date(self):
         self.set_date_range()

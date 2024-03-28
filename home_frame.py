@@ -1,9 +1,11 @@
 from multiprocessing import Event, Pool as ThreadPool, Process
 import pickle
+import socket
 from threading import Thread
 import threading
 import time
 from customtkinter import *
+import tkinter.messagebox as MessageBox
 from PIL import Image
 
 import face_recognition
@@ -136,7 +138,6 @@ class HomeFrame(CTkFrame):
         process = Process(target=attendance.take_attendance, args=(self.stop_event,))
         process.daemon = True
         process.start()
-        
     
     # Utility Functions
     def save_choice(self, *args):

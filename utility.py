@@ -15,11 +15,11 @@ config_path = 'config.json'
 def is_valid_config(data):
     # Define the keys you expect in the configuration and their types
     expected_keys = {
-        "CHOICE": list,
-        "HOST": str,
-        "USER": str,
-        "PASSWD": str,
-        "DB": str
+        "choice": list,
+        "host": str,
+        "user": str,
+        "passwd": str,
+        "db": str
     }
     # Check if all keys exist and have the correct type
     for key, expected_type in expected_keys.items():
@@ -43,12 +43,18 @@ def get_config():
             showwarning("Warning", "Configuration file not found. A sample config will be created. Please fill it out.")
             # Create a sample configuration file
             sample_data = {
-                "CHOICE": ["0", 0, "rtsp://username:password@camera_ip_address"],
-                "SCALE": 0.2,
-                "HOST": "",
-                "USER": "",
-                "PASSWD": "",
-                "DB": ""
+                "choice": [
+                    "0",
+                    0,
+                    "rtsp://id:pass@ip:port"
+                ],
+                "scale": 0.7,
+                "check-in-before": 10,
+                "check-out-after": 12,
+                "host": "",
+                "user": "",
+                "passwd": "",
+                "db": ""
             }
             with open(config_path, 'w') as file:
                 json.dump(sample_data, file, indent=4)
@@ -62,7 +68,7 @@ def update_choice(new_choice):
         config = json.load(file)
 
     # Update the CHOICE value
-    config["CHOICE"] = new_choice
+    config["choice"] = new_choice
 
     # Write the updated configuration back to the file
     with open(config_path, 'w') as file:

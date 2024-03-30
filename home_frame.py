@@ -150,7 +150,7 @@ class HomeFrame(CTkFrame):
 
     def get_choice(self):
         config = get_config()
-        return config["CHOICE"]
+        return config["choice"]
 
     def load_previous_choices(self):
         choices = self.get_choice()
@@ -184,17 +184,17 @@ class HomeFrame(CTkFrame):
             except FileNotFoundError:
                 showwarning("Warning", f"Missing folder for {id}")
         
-        teachers_face_data = self.get_teacher_encodings()
-        total = len(teachers_face_data)
-        for index,data in enumerate(teachers_face_data.items()):
+        staff_face_data = self.get_staff_encodings()
+        total = len(staff_face_data)
+        for index,data in enumerate(staff_face_data.items()):
             try:
                 time.sleep(0.05)
-                loading_animation.change_text(f"teacher\n{index+1}/{total}")
+                loading_animation.change_text(f"staff_face\n{index+1}/{total}")
                 id = data[0]
                 if data[1] == None:
-                    folder = "./Teacher_face/" + id
+                    folder = "./Staff_face/" + id
                     encodings = self.process_for_folder(folder)
-                    self.save_teacher_encodings(id,encodings)
+                    self.save_staff_encodings(id,encodings)
             except FileNotFoundError:
                 showwarning("Warning", f"Missing folder for {id}")
                 
@@ -208,28 +208,43 @@ class HomeFrame(CTkFrame):
     
     def save_encodinds_locally(self):
         data = []
-        profiles = self.db.fetch_data("SELECT ID, Name, Encoding from student UNION ALL SELECT ID, Name, Encoding from teacher;")
+        profiles = self.db.fetch_data("""
+SELECT
+    ID,
+    Name,
+    Encoding, 
+    'student' as Role 
+FROM
+    student_face 
+UNION ALL 
+SELECT 
+    ID, 
+    Name, 
+    Encoding, 
+    'staff' as Role 
+FROM
+    staff_face;""")
         for profile in profiles:
             if profile[2] is not None:
-                id, name, encoding = profile[0], profile[1], pickle.loads(profile[2])
-                data.append((id, name, encoding))
+                id, name, encoding, role = profile[0], profile[1], pickle.loads(profile[2]), profile[3]
+                data.append((id, name, encoding, role))
         with open('face_data.pkl', 'wb') as file:
             pickle.dump(data, file)
     
     def save_student_encodings(self,id,encodings):
         binary_encoding = pickle.dumps(encodings)
-        self.db.execute_query("UPDATE student SET Encoding=%s WHERE ID=%s;", (binary_encoding, id))
+        self.db.execute_query("UPDATE student_face SET Encoding=%s WHERE ID=%s;", (binary_encoding, id))
     
-    def save_teacher_encodings(self,id,encodings):
+    def save_staff_encodings(self,id,encodings):
         binary_encoding = pickle.dumps(encodings)
-        self.db.execute_query("UPDATE teacher SET Encoding=%s WHERE ID=%s;", (binary_encoding, id))
+        self.db.execute_query("UPDATE staff_face SET Encoding=%s WHERE ID=%s;", (binary_encoding, id))
         
     
     def get_student_encodings(self):
-        return dict(self.db.fetch_data("SELECT ID,Encoding from student;"))
+        return dict(self.db.fetch_data("SELECT ID,Encoding from student_face;"))
     
-    def get_teacher_encodings(self):
-        return dict(self.db.fetch_data("SELECT ID,Encoding from teacher;"))
+    def get_staff_encodings(self):
+        return dict(self.db.fetch_data("SELECT ID,Encoding from staff_face;"))
     
     @staticmethod
     def get_face_encoding(image_path):

@@ -32,10 +32,10 @@ sys.stdout = PrintLogger()
 class Database:
     def __init__(
         self,
-        host=config["HOST"],
-        user=config["USER"],
-        passwd=config["PASSWD"],
-        database=config["DB"],
+        host=config["host"],
+        user=config["user"],
+        passwd=config["passwd"],
+        database=config["db"],
         wait_timeout=28800,
         interactive_timeout=28800,
     ):

@@ -60,7 +60,7 @@ class DataFrame(CTkFrame):
 
         self.toggle_button = ToggleButton(
             self.filter_frame,
-            texts=("Switch to Teachers", "Switch to Students"),
+            texts=("Switch to Staff", "Switch to Students"),
             font=("Arial", 15, "bold"),
             width = 200,
             callbacks=(self.show_table, self.show_table),
@@ -181,7 +181,7 @@ class DataFrame(CTkFrame):
             if not self.toggle_button.state:
                 file_name = f"./Saved_Files/{course} {sem} {dt1}_{dt2}.xlsx"
             else:
-                file_name = f"./Saved_Files/Teachers {dt1}_{dt2}.xlsx"
+                file_name = f"./Saved_Files/Staff {dt1}_{dt2}.xlsx"
             wb.save(file_name)
             messagebox.showinfo("Info", "File saved.")
         except Exception as e:
@@ -197,9 +197,16 @@ class DataFrame(CTkFrame):
                 f"""
                 MAX(
                     CASE
-                        WHEN a.date = '{date}' THEN {"DATE_FORMAT(a.time, '%l:%i %p') ELSE '-'" if clicked else "'P' ELSE 'A'"}  
+                        WHEN 
+                            a.Date = '{date}' 
+                        THEN 
+                            {
+                                "CONCAT_WS(' - ',COALESCE(DATE_FORMAT(a.CheckIn, '%l:%i %p'), 'No CheckIn'),COALESCE(DATE_FORMAT(a.CheckOut, '%l:%i %p'), 'No CheckOut')) ELSE '-'"
+                                if clicked else "'P' ELSE 'A'"
+                            }  
                         END
-                ) AS `{date}`"""
+                ) AS `{date}`
+                """
                 for date in self.dates
             ]
         )
@@ -210,9 +217,9 @@ SELECT
     s.Name,
     {date_cases}
 FROM
-    student s
+    student_face s
 LEFT JOIN
-    attendance a ON s.ID = a.ID
+    student_attendance a ON s.ID = a.ID
 WHERE
     1=1
     AND s.Sem like '{'%' if sem == "ALL" else sem}' AND s.Course like '{'%' if course == "ALL" else course}'
@@ -227,9 +234,9 @@ SELECT
     s.Name,
     {date_cases}
 FROM
-    teacher s
+    staff_face s
 LEFT JOIN
-    attendance a ON s.ID = a.ID
+    staff_attendance a ON s.ID = a.ID
 GROUP BY
     s.ID,
     s.Name

@@ -1,4 +1,3 @@
-
 import os
 from queue import Queue
 import shutil
@@ -12,6 +11,7 @@ from database import Database
 from toggle_button import ToggleButton
 from utility import *
 import dlib
+
 
 class AddDataFrame(CTkFrame):
     def __init__(self, parent, db: Database, **kwargs):
@@ -31,8 +31,8 @@ class AddDataFrame(CTkFrame):
     def show_student_table(self):
         self.table_frame.show_student_data()
 
-    def show_teacher_table(self):
-        self.table_frame.show_teacher_data()
+    def show_staff_table(self):
+        self.table_frame.show_staff_data()
 
     def start_camera(self):
         data = self.get_input_data()
@@ -45,18 +45,18 @@ class AddDataFrame(CTkFrame):
         else:
             self.ask_data_frame.submit_button.configure(state=DISABLED)
             self.show_camera_frame.start_camera(data)
-            
+
     def show_student_data(self):
         self.table_frame.show_student_data()
 
-    def show_teacher_data(self):
-        self.table_frame.show_teacher_data()
-    
+    def show_staff_data(self):
+        self.table_frame.show_staff_data()
+
     def add_profile(self):
         data = self.get_input_data()
         if data["student"]:
             success = self.db.execute_query(
-                """INSERT INTO student (ID, Name, Course, Sem)
+                """INSERT INTO student_face (ID, Name, Course, Sem)
                     VALUES (%s, %s, %s, %s)
                     ON DUPLICATE KEY UPDATE
                     Name = VALUES(Name), Course = VALUES(Course), Sem = VALUES(Sem);""",
@@ -65,13 +65,13 @@ class AddDataFrame(CTkFrame):
             self.show_student_data()
         else:
             success = self.db.execute_query(
-                """INSERT INTO teacher (ID, Name, Dep)
+                """INSERT INTO staff_face (ID, Name, Dep)
                     VALUES (%s, %s, %s)
                     ON DUPLICATE KEY UPDATE
                     Name = VALUES(Name), Dep = VALUES(Dep);""",
                 (data["id"], data["name"], data["dep"]),
             )
-            self.show_teacher_data()
+            self.show_staff_data()
         if success:
             self.ask_data_frame.set_success_logo()
         else:
@@ -90,11 +90,12 @@ class AskDataFrame(CTkFrame):
         self.entry2 = StringVar()
 
         self.status_label = CTkLabel(self, text="", fg_color="transparent")
-        
+
         self.toggle_button = ToggleButton(
             self,
-            texts=("Teacher", "Student"),
-            callbacks=(self.ask_student, self.ask_teacher), font=("Arial", 15, "bold")
+            texts=("Staff", "Student"),
+            callbacks=(self.ask_student, self.ask_staff),
+            font=("Arial", 15, "bold"),
         )
         self.toggle_button.place(relx=0.3, rely=0.87, anchor=CENTER)
 
@@ -126,7 +127,10 @@ class AskDataFrame(CTkFrame):
         )
 
         self.submit_button = CTkButton(
-            self, text="Add Profile", command=self.parent.start_camera, font=("Arial", 15, "bold")
+            self,
+            text="Add Profile",
+            command=self.parent.start_camera,
+            font=("Arial", 15, "bold"),
         )
         self.submit_button.place(relx=0.7, rely=0.87, anchor="center")
 
@@ -151,7 +155,7 @@ class AskDataFrame(CTkFrame):
         self.sem_entry.place(relx=0.4, rely=0.54, relwidth=0.5)
         self.on_click()
 
-    def ask_teacher(self):
+    def ask_staff(self):
         self.toggle_button.configure(state=DISABLED)
         self.sem_label.place_forget()
         self.sem_entry.place_forget()
@@ -167,20 +171,19 @@ class AskDataFrame(CTkFrame):
         self.dep_entry.place(relx=0.4, rely=0.42, relwidth=0.5)
         self.on_click()
 
-
     def on_click(self, *args):
         def temp():
             try:
                 if not self.toggle_button.state:
                     self.parent.show_student_table()
                 else:
-                    self.parent.show_teacher_table()
+                    self.parent.show_staff_table()
                 self.forget_status()
             except:
                 pass
             self.toggle_button.configure(state=NORMAL)
-        self.after(50,temp) 
-            
+
+        self.after(50, temp)
 
     def get_data(self):
         data = {
@@ -217,7 +220,7 @@ class ShowCameraFrame(CTkFrame):
         self.start = False
         self.configure(border_width=4, border_color="#5665EF", corner_radius=0)
         self.safe_to_close = True
-        
+
     def create_widgets(self):
         self.button_frame = CTkLabel(self, text="", height=30)
         self.button_frame.pack(fill="x", padx=6, pady=6, side="bottom")
@@ -240,14 +243,14 @@ class ShowCameraFrame(CTkFrame):
         if data["student"]:
             self.profile_folder_path = "./Student_Face/" + data["id"]
         else:
-            self.profile_folder_path = "./Teacher_Face/" + data["id"]
+            self.profile_folder_path = "./Staff_Face/" + data["id"]
 
         if not os.path.exists(self.profile_folder_path):
             os.makedirs(self.profile_folder_path)
-            
+
         self.queue = Queue(maxsize=1)
         self.running = True
-        self.camera_process_thread = Thread(target=self.camera_thread,daemon=True)
+        self.camera_process_thread = Thread(target=self.camera_thread, daemon=True)
         self.camera_process_thread.start()
         self.update_frame()
 
@@ -264,13 +267,18 @@ class ShowCameraFrame(CTkFrame):
             if self.queue.empty():
                 if not frame_set:
                     scale = 3
-                    frame_height = frame.shape[0]//scale
-                    frame_width = frame.shape[1]//scale
-                frame2 = cv2.resize(frame, (frame_width,frame_height))
+                    frame_height = frame.shape[0] // scale
+                    frame_width = frame.shape[1] // scale
+                frame2 = cv2.resize(frame, (frame_width, frame_height))
                 face_locations = detector(frame2)
                 if face_locations and len(face_locations) == 1:
                     face_location = face_locations[0]
-                    top, right, bottom, left = face_location.top(),face_location.right(),face_location.bottom(),face_location.left()
+                    top, right, bottom, left = (
+                        face_location.top(),
+                        face_location.right(),
+                        face_location.bottom(),
+                        face_location.left(),
+                    )
 
                     # Scale the face location coordinates
                     top_scaled = int(top * scale)
@@ -287,13 +295,15 @@ class ShowCameraFrame(CTkFrame):
                     face = frame[top_final:bottom_final, left_final:right_final]
                     if self.start:
                         self.frame_count += 1
-                        file_name_path = (f"{self.profile_folder_path}/{str(self.frame_count)}.jpg")
+                        file_name_path = (
+                            f"{self.profile_folder_path}/{str(self.frame_count)}.jpg"
+                        )
                         cv2.imwrite(file_name_path, face)
                     cv2.rectangle(frame2, (left, top), (right, bottom), (0, 255, 0), 2)
                     cv2.putText(
                         frame2,
                         str(self.frame_count),
-                        (frame_height//4, frame_width//4),
+                        (frame_height // 4, frame_width // 4),
                         cv2.FONT_HERSHEY_COMPLEX,
                         1,
                         (0, 255, 0),
@@ -301,7 +311,7 @@ class ShowCameraFrame(CTkFrame):
                     )
                 if self.frame_count >= 100:
                     self.parent.add_profile()
-                    break     
+                    break
                 self.queue.put(frame2)
                 if not frame_set:
                     frame_set = True
@@ -313,7 +323,7 @@ class ShowCameraFrame(CTkFrame):
         self.delete_widgets()
 
         self.safe_to_close = True
-    
+
     def update_frame(self):
         if not self.queue.empty():
             frame = self.queue.get()
@@ -323,7 +333,7 @@ class ShowCameraFrame(CTkFrame):
             img = Image.fromarray(cv2image)
             imgtk = CTkImage(img, size=(image_width, image_height))
             self.image_label.configure(image=imgtk)
-        
+
         if self.running:
             self.image_label.after(10, self.update_frame)
 
@@ -331,11 +341,27 @@ class ShowCameraFrame(CTkFrame):
         data = self.parent.get_input_data()
         if data["student"]:
             self.parent.db.execute_query(
-                f"""UPDATE student SET Encoding = null WHERE ID = '{data["id"]}';"""
+                """
+                UPDATE 
+                    student_face 
+                SET 
+                    Encoding = null 
+                WHERE 
+                    ID = %s;
+                """,
+                (data["id"],),
             )
         else:
             self.parent.db.execute_query(
-                f"""UPDATE teacher SET Encoding = null WHERE ID = '{data["id"]}';"""
+                """
+                UPDATE 
+                    staff_face 
+                SET 
+                    Encoding = null 
+                WHERE 
+                    ID = %s;
+                """,
+                (data["id"],),
             )
         self.start = True
 
@@ -350,9 +376,10 @@ class ShowCameraFrame(CTkFrame):
         self.running = False
 
     def get_camera_choice(self):
-        if get_config()["CHOICE"][0] == "3":
-            return get_config()["CHOICE"][2]
-        return int(get_config()["CHOICE"][0])
+        if get_config()["choice"][0] == "3":
+            return get_config()["choice"][2]
+        return int(get_config()["choice"][0])
+
 
 class TableFrame(CTkFrame):
     def __init__(self, parent, db: Database, **kwargs):
@@ -492,23 +519,23 @@ class TableFrame(CTkFrame):
         self.trash_button1.place(rely=0.98, relx=0.98, anchor="se")
 
         # Create the Treeview
-        self.teacher_tree = ttk.Treeview(
+        self.staff_tree = ttk.Treeview(
             self, yscrollcommand=self.tree_scroll.set, selectmode="extended"
         )
         # Define columns
-        self.teacher_tree["columns"] = ("ID", "Name", "Department")
-        self.teacher_tree.column("#0", width=0, stretch=tk.NO)
-        self.teacher_tree.column("ID", anchor=tk.W, width=120)
-        self.teacher_tree.column("Name", anchor=tk.W, width=120)
-        self.teacher_tree.column("Department", anchor=tk.W, width=120)
+        self.staff_tree["columns"] = ("ID", "Name", "Department")
+        self.staff_tree.column("#0", width=0, stretch=tk.NO)
+        self.staff_tree.column("ID", anchor=tk.W, width=120)
+        self.staff_tree.column("Name", anchor=tk.W, width=120)
+        self.staff_tree.column("Department", anchor=tk.W, width=120)
         # Define headings
-        self.teacher_tree.heading("ID", text="ID", anchor=tk.W)
-        self.teacher_tree.heading("Name", text="Name", anchor=tk.W)
-        self.teacher_tree.heading("Department", text="Course", anchor=tk.W)
+        self.staff_tree.heading("ID", text="ID", anchor=tk.W)
+        self.staff_tree.heading("Name", text="Name", anchor=tk.W)
+        self.staff_tree.heading("Department", text="Course", anchor=tk.W)
 
         self.trash_button2 = CTkButton(
-            self.teacher_tree,
-            command=self.remove_teacher,
+            self.staff_tree,
+            command=self.remove_staff,
             image=self.trash_logo,
             text="",
             width=30,
@@ -520,28 +547,70 @@ class TableFrame(CTkFrame):
         self.trash_button2.place(rely=0.98, relx=0.98, anchor="se")
 
     def sem_increment(self):
-        response = messagebox.askyesno("Confirm", "It will move every student to the next sem !!")
+        response = messagebox.askyesno(
+            "Confirm", "It will move every student to the next sem !!"
+        )
         if response:
-            self.db.execute_query("UPDATE student SET sem = sem + 1")
+            self.db.execute_query(
+                """
+                UPDATE 
+                    student_face 
+                SET 
+                    sem = sem + 1
+                """
+                )
             self.show_student_data()
-            
+
     def sem_decrement(self):
-        response = messagebox.askyesno("Confirm", "It will move every student to the previous sem !!")
+        response = messagebox.askyesno(
+            "Confirm", "It will move every student to the previous sem !!"
+        )
         if response:
-            min_sem = self.db.fetch_data("SELECT MIN(sem) FROM student")[0][0]
+            min_sem = self.db.fetch_data(
+                """
+                SELECT 
+                    MIN(sem) 
+                FROM 
+                    student_face
+                """
+                )[0][0]
             if min_sem != 1:
-                self.db.execute_query("UPDATE student SET sem = sem - 1")
+                self.db.execute_query(
+                    """
+                    UPDATE 
+                        student_face 
+                    SET
+                        sem = sem - 1
+                    """
+                    )
                 self.show_student_data()
 
-    
     def remove_student(self):
         def temp():
-            response = messagebox.askyesno("Confirm", "Are you sure you want to do this?")
+            response = messagebox.askyesno(
+                "Confirm", "Are you sure you want to do this?"
+            )
             if response:
                 for selected_item in self.student_tree.selection():
                     id = self.student_tree.item(selected_item)["values"][0]
-                    self.db.execute_query("DELETE FROM student WHERE ID = %s;", (id,))
-                    self.db.execute_query("DELETE FROM attendance WHERE ID = %s;", (id,))
+                    self.db.execute_query(
+                        """
+                        DELETE FROM 
+                            student_face 
+                        WHERE
+                            ID = %s;
+                        """,
+                        (id,)
+                    )
+                    self.db.execute_query(
+                        """
+                        DELETE FROM 
+                            student_attendance 
+                        WHERE
+                            ID = %s;
+                        """,
+                        (id,)
+                    )
                     try:
                         shutil.rmtree(f"{os.getcwd()}/Student_Face/{id}")
                     except Exception:
@@ -549,23 +618,43 @@ class TableFrame(CTkFrame):
                 self.after(10, self.show_student_data)
             else:
                 self.after(10, self.show_student_data)
+
         Thread(target=temp, daemon=True).start()
-        
-    def remove_teacher(self):
+
+    def remove_staff(self):
         def temp():
-            response = messagebox.askyesno("Confirm", "Are you sure you want to do this?")
+            response = messagebox.askyesno(
+                "Confirm", "Are you sure you want to do this?"
+            )
             if response:
-                for selected_item in self.teacher_tree.selection():
-                    id = self.teacher_tree.item(selected_item)["values"][0]
-                    self.db.execute_query("DELETE FROM teacher WHERE ID = %s;", (id,))
-                    self.db.execute_query("DELETE FROM attendance WHERE ID = %s;", (id,))
+                for selected_item in self.staff_tree.selection():
+                    id = self.staff_tree.item(selected_item)["values"][0]
+                    self.db.execute_query(
+                        """
+                        DELETE FROM 
+                            staff_face
+                        WHERE
+                            ID = %s;
+                        """,
+                        (id,)
+                    )
+                    self.db.execute_query(
+                        """
+                        DELETE FROM
+                            staff_attendance
+                        WHERE
+                            ID = %s;
+                        """,
+                        (id,)
+                    )
                     try:
-                        shutil.rmtree(f"{os.getcwd()}/Teacher_Face/{id}")
+                        shutil.rmtree(f"{os.getcwd()}/Staff_Face/{id}")
                     except Exception:
                         pass
-                self.after(10, self.show_teacher_data)
+                self.after(10, self.show_staff_data)
             else:
-                self.after(10, self.show_teacher_data)
+                self.after(10, self.show_staff_data)
+
         Thread(target=temp, daemon=True).start()
 
     def clear_tree(self, tree: ttk.Treeview):
@@ -573,7 +662,6 @@ class TableFrame(CTkFrame):
         items = tree.get_children()
         if items:
             tree.delete(*items)
-
 
     def show_student_data(self, *args, **kwargs):
         # Extracting keyword arguments with default values
@@ -587,7 +675,7 @@ class TableFrame(CTkFrame):
 SELECT 
     ID, Name, Course, Sem
 FROM 
-    student
+    student_face
 WHERE 
     1=1
     AND Name LIKE "{name}%"
@@ -603,13 +691,13 @@ ORDER BY
         for row in data:
             self.student_tree.insert("", "end", values=row)
 
-        self.teacher_tree.pack_forget()
+        self.staff_tree.pack_forget()
         self.tree_scroll.config(command=self.student_tree.yview)
         self.student_tree.pack(
             side="left", fill="both", expand=True, padx=(8, 0), pady=(1, 8)
         )
 
-    def show_teacher_data(self, *args, **kwargs):
+    def show_staff_data(self, *args, **kwargs):
         # Extracting keyword arguments with default values
         name = kwargs.get("name", "")
         id = kwargs.get("id", "")
@@ -619,7 +707,7 @@ ORDER BY
 SELECT 
     ID, Name, Dep
 FROM 
-    teacher
+    staff_face
 WHERE 
     1=1
     AND Name LIKE "{name}%"
@@ -629,12 +717,12 @@ ORDER BY
 """
         data = self.db.fetch_data(query)
 
-        self.clear_tree(self.teacher_tree)
+        self.clear_tree(self.staff_tree)
         for row in data:
-            self.teacher_tree.insert("", "end", values=row)
+            self.staff_tree.insert("", "end", values=row)
 
         self.student_tree.pack_forget()
-        self.tree_scroll.config(command=self.teacher_tree.yview)
-        self.teacher_tree.pack(
+        self.tree_scroll.config(command=self.staff_tree.yview)
+        self.staff_tree.pack(
             side="left", fill="both", expand=True, padx=(8, 0), pady=(1, 8)
         )

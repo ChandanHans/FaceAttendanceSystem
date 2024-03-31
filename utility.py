@@ -16,6 +16,9 @@ def is_valid_config(data):
     # Define the keys you expect in the configuration and their types
     expected_keys = {
         "choice": list,
+        "scale": float,
+        "max_checkin": str,
+        "min_checkout": str,
         "host": str,
         "user": str,
         "passwd": str,
@@ -49,8 +52,8 @@ def get_config():
                     "rtsp://id:pass@ip:port"
                 ],
                 "scale": 0.7,
-                "check-in-before": 10,
-                "check-out-after": 12,
+                "max_checkin": "09:30:00",
+                "min_checkout": "13:30:00",
                 "host": "",
                 "user": "",
                 "passwd": "",
@@ -75,7 +78,4 @@ def update_choice(new_choice):
         json.dump(config, file, indent=4)
         
 def showwarning(title,message):
-    root = tk.Tk()
-    root.withdraw()  # Hide the main window
     messagebox.showwarning(title, message)
-    root.destroy()

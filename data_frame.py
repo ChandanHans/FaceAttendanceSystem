@@ -241,6 +241,7 @@ GROUP BY
     s.ID,
     s.Name
 """
+        
         return query
 
     def open_date_picker(self, event, input_field_text: StringVar):

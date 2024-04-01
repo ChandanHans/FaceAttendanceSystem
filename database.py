@@ -1,32 +1,8 @@
-import sys
 import mysql.connector
-from mysql.connector import Error
 import logging
 from utility import get_config
 
 config = get_config()
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(message)s',
-    handlers=[
-        logging.FileHandler("output.log", mode="w"),  # Log to this file
-        logging.StreamHandler()  # Log to console (optional, remove if not needed)
-    ]
-)
-class PrintLogger:
-    """Logger that captures print statements and redirects them to logging."""
-    def write(self, message):
-        # Only log if there is a message (not just a new line)
-        if message.rstrip() != "":
-            logging.info(message.rstrip())
-    
-    def flush(self):
-        # This flush method is required for file-like object
-        pass
-
-# Redirect standard output to PrintLogger
-sys.stdout = PrintLogger()
 
 
 class Database:

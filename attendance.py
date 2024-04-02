@@ -123,8 +123,6 @@ def mark_present():
                 current_time = datetime.now()
                 date = current_time.strftime("%Y-%m-%d")
                 time = current_time.strftime("%H:%M:%S")
-                engine.say(person[1])
-                engine.runAndWait()
                 try:
                     if person[2] == "student":
                         db.execute_query(
@@ -163,6 +161,8 @@ def mark_present():
                                 """,
                                 (person[0], date, time),
                             )
+                    engine.say(person[1])
+                    engine.runAndWait()
                     previous_id = person[0]
                 except:
                     pass

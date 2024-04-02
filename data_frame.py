@@ -12,6 +12,7 @@ from utility import *
 class DataFrame(CTkFrame):
     def __init__(self, parent, db: Database, **kwargs):
         super().__init__(parent, **kwargs)
+        self.parent = parent
         self.db = db
         self.date_picker_opened = False
         self.download_logo = CTkImage(
@@ -144,7 +145,7 @@ class DataFrame(CTkFrame):
                     text=i,
                     anchor=tk.W,
                 )
-
+            
             data = self.db.fetch_data(self.generate_query())
             for row in data:
                 self.tree.insert("", "end", values=row)
@@ -259,9 +260,9 @@ GROUP BY
             self.show_table()
 
         cal = Calendar(
-            self, selectmode="day", mindate=self.oldest_date, maxdate=self.recent_date
+            self.parent, selectmode="day", mindate=self.oldest_date, maxdate=self.recent_date
         )
-        cal.place(rely=0.3, relx=0.5, anchor="center")
+        cal.place(rely=0.5, relx=0.5, anchor="center")
         cal.bind("<<CalendarSelected>>", on_date_select)
 
     def set_date_range(self):

@@ -172,10 +172,12 @@ class HomeFrame(CTkFrame):
         loading_animation = LoadingAnimation(self.parent)
         students_face_data = self.get_student_encodings()
         total = len(students_face_data)
+        max_processes = os.cpu_count()
         for index,data in enumerate(students_face_data.items()):
             try:
                 time.sleep(0.05)
-                loading_animation.change_text(f"student\n{index+1}/{total}")
+                
+                loading_animation.change_text(f"{max_processes}\nstudent\n{index+1}/{total}")
                 id = data[0]
                 if data[1] == None:
                     folder = "./Student_face/" + id
@@ -189,7 +191,7 @@ class HomeFrame(CTkFrame):
         for index,data in enumerate(staff_face_data.items()):
             try:
                 time.sleep(0.05)
-                loading_animation.change_text(f"staff_face\n{index+1}/{total}")
+                loading_animation.change_text(f"{max_processes}\nstaff_face\n{index+1}/{total}")
                 id = data[0]
                 if data[1] == None:
                     folder = "./Staff_face/" + id

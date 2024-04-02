@@ -45,16 +45,16 @@ class Database:
 
     def fetch_data(self, query, params=()):
         """Fetch data from the database using a SELECT query."""
-        if self.conn and self.conn.is_connected():
-            try:
-                with self.conn.cursor() as cursor:
-                    cursor.execute(query, params)
-                    result = cursor.fetchall()
-                return result
-            except Exception as e:
-                print(e)
-                return []
-        self.connect()
+        try:
+            if not self.conn or not self.conn.is_connected():
+                self.connect()
+            with self.conn.cursor() as cursor:
+                cursor.execute("SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;")
+                cursor.execute(query, params)
+                result = cursor.fetchall()
+            return result
+        except Exception as e:
+            return []
 
     def execute_query(self, query, params=()):
         """Execute a given SQL query (INSERT, UPDATE, DELETE) and return True if successful."""

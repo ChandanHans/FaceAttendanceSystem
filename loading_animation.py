@@ -2,7 +2,7 @@ from customtkinter import *
 import tkinter as tk
 
 class LoadingAnimation(CTkFrame):
-    def __init__(self, parent : CTkFrame, radius=50, circle_width=15, speed=40, circle_color="#B188A8"):
+    def __init__(self, parent : CTkFrame, radius=90, circle_width=15, speed=40, circle_color="#B188A8"):
         super().__init__(parent, corner_radius=10)
         self.canvas = CTkCanvas(self, bg="gray20")
         self.radius = radius

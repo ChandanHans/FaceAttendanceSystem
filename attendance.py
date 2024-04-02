@@ -9,6 +9,7 @@ from database import Database
 import face_recognition
 from multiprocessing import freeze_support
 from utility import *
+import pyttsx3
 import dlib
 from flask import Flask, Response
 from datetime import datetime
@@ -79,7 +80,7 @@ def take_attendance(stop_event):
                     for profile in known_face:
                         if prediction(profile[2], face_encoding):
                             name = profile[1]
-                            detected_id_queue.put((profile[0], profile[3]))
+                            detected_id_queue.put((profile[0], profile[1], profile[3]))
                             font = cv2.FONT_HERSHEY_SIMPLEX
                             cv2.putText(
                                 frame,
@@ -114,16 +115,18 @@ def mark_present():
     max_checkin = datetime.strptime(get_config()["max_checkin"], "%H:%M:%S").time()
     min_checkout = datetime.strptime(get_config()["min_checkout"], "%H:%M:%S").time()
     previous_id = ""
+    engine = pyttsx3.init()
     while not stop:
         if not detected_id_queue.empty():
-            person = detected_id_queue.get()
+            person = detected_id_queue.get()     # ID, Name, Role
             if previous_id != person[0]:
                 current_time = datetime.now()
                 date = current_time.strftime("%Y-%m-%d")
                 time = current_time.strftime("%H:%M:%S")
-                print(current_time,max_checkin,min_checkout)
+                engine.say(person[1])
+                engine.runAndWait()
                 try:
-                    if person[1] == "student":
+                    if person[2] == "student":
                         db.execute_query(
                             """
                             INSERT IGNORE INTO 

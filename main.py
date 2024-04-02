@@ -13,7 +13,7 @@ from utility import *
 
 config = get_config()
 
-
+set_appearance_mode("Dark")
 class FaceAttendanceSystem(CTk):
     def __init__(self):
         super().__init__()

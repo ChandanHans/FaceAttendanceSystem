@@ -7,12 +7,14 @@ from customtkinter import *
 import cv2
 from database import Database
 import face_recognition
-from multiprocessing import freeze_support
+from multiprocessing import Event, freeze_support
 from utility import *
 import pyttsx3
 import dlib
 from flask import Flask, Response
 from datetime import datetime
+
+
 
 stop = False
 latest_frame = None
@@ -251,3 +253,5 @@ def start_streaming():
 
 if __name__ == "__main__":
     freeze_support()
+    stop_event = Event()
+    take_attendance(stop_event)

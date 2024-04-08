@@ -75,6 +75,7 @@ def take_attendance(stop_event):
             frame = cv2.resize(frame, (frame_width, frame_height))
             face_detected = detector(frame)
             if face_detected:
+                face_in_frame = []
                 face_locations = face_recognition.face_locations(frame)
                 face_encodings = face_recognition.face_encodings(frame, face_locations)
                 for face_location, face_encoding in zip(face_locations, face_encodings):
@@ -82,7 +83,7 @@ def take_attendance(stop_event):
                     for profile in known_face:
                         if prediction(profile[2], face_encoding):
                             name = profile[1]
-                            detected_id_queue.put((profile[0], profile[1], profile[3]))
+                            face_in_frame.append((profile[0], profile[1], profile[3]))
                             font = cv2.FONT_HERSHEY_SIMPLEX
                             cv2.putText(
                                 frame,
@@ -95,6 +96,7 @@ def take_attendance(stop_event):
                             )
                             break
                     cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 1)
+                detected_id_queue.put(face_in_frame)
             latest_stream_frame = frame
             cv2.imshow(streaming_ip, frame)
             if not frame_set:
@@ -107,68 +109,80 @@ def take_attendance(stop_event):
 
 
 def get_camera_choice():
-    if get_config()["choice"][0] == "3":
-        return get_config()["choice"][2]
-    return int(get_config()["choice"][0])
+    camera_choice = get_config()["camera_choice"]
+    if camera_choice == 3:
+        return get_config()["camera_ip"]
+    return int(camera_choice)
 
 
 def mark_present():
     global detected_id_queue, stop
     max_checkin = datetime.strptime(get_config()["max_checkin"], "%H:%M:%S").time()
     min_checkout = datetime.strptime(get_config()["min_checkout"], "%H:%M:%S").time()
-    previous_id = ""
+    last_ten_frame = []
     engine = pyttsx3.init()
+    audio_choice = get_config()["audio_choice"]
     while not stop:
         if not detected_id_queue.empty():
-            person = detected_id_queue.get()     # ID, Name, Role
-            if previous_id != person[0]:
-                current_time = datetime.now()
-                date = current_time.strftime("%Y-%m-%d")
-                time = current_time.strftime("%H:%M:%S")
-                engine.say(person[1])
-                engine.runAndWait()
-                try:
-                    if person[2] == "student":
-                        db.execute_query(
-                            """
-                            INSERT IGNORE INTO 
-                                student_attendance (ID, Date, CheckIn) 
-                            VALUES
-                                (%s, %s, %s)
-                            """,
-                            (person[0], date, time),
-                        )
-                    else:
-                        if current_time.time() < max_checkin:
+            current_time = datetime.now()
+            date = current_time.strftime("%Y-%m-%d")
+            time = current_time.strftime("%H:%M:%S")
+            recent_detection = detected_id_queue.get()    # [(ID, Name, Role),]
+            recently_detected = False
+            for person in recent_detection:
+                for i in last_ten_frame:
+                    for j in i:
+                        if j == person:
+                            recently_detected = True
+                            break
+                if not recently_detected:
+                    if audio_choice:
+                        engine.say(person[1])
+                        engine.runAndWait()
+                    try:
+                        if person[2] == "student":
                             db.execute_query(
                                 """
                                 INSERT IGNORE INTO 
-                                    staff_attendance (ID, Date, CheckIn) 
+                                    student_attendance (ID, Date, CheckIn) 
                                 VALUES
                                     (%s, %s, %s)
-                                ON DUPLICATE KEY 
-                                UPDATE 
-                                    CheckIn = VALUES(CheckIn);
                                 """,
                                 (person[0], date, time),
                             )
-                        elif current_time.time() > min_checkout:
-                            db.execute_query(
-                                """
-                                INSERT INTO 
-                                    staff_attendance (ID, Date, CheckOut) 
-                                VALUES 
-                                    (%s, %s, %s) 
-                                ON DUPLICATE KEY 
-                                UPDATE 
-                                    CheckOut = VALUES(CheckOut);
-                                """,
-                                (person[0], date, time),
-                            )
-                    previous_id = person[0]
-                except:
-                    pass
-        sleep(1)
+                        else:
+                            if current_time.time() < max_checkin:
+                                db.execute_query(
+                                    """
+                                    INSERT IGNORE INTO 
+                                        staff_attendance (ID, Date, CheckIn) 
+                                    VALUES
+                                        (%s, %s, %s)
+                                    ON DUPLICATE KEY 
+                                    UPDATE 
+                                        CheckIn = VALUES(CheckIn);
+                                    """,
+                                    (person[0], date, time),
+                                )
+                            elif current_time.time() > min_checkout:
+                                db.execute_query(
+                                    """
+                                    INSERT INTO 
+                                        staff_attendance (ID, Date, CheckOut) 
+                                    VALUES 
+                                        (%s, %s, %s) 
+                                    ON DUPLICATE KEY 
+                                    UPDATE 
+                                        CheckOut = VALUES(CheckOut);
+                                    """,
+                                    (person[0], date, time),
+                                )
+                    except:
+                        pass
+            if len(last_ten_frame) == 10:
+                last_ten_frame.pop()
+            last_ten_frame.insert(0,recent_detection)
+        sleep(0.1)
 
 
 def get_known_face():

@@ -2,7 +2,7 @@ from customtkinter import *
 import tkinter as tk
 
 class LoadingAnimation(CTkFrame):
-    def __init__(self, parent : CTkFrame, radius=90, circle_width=15, speed=40, circle_color="#B188A8"):
+    def __init__(self, parent : CTkFrame, radius=50, circle_width=15, speed=40, circle_color="#B188A8", font_size = 15):
         super().__init__(parent, corner_radius=10)
         self.canvas = CTkCanvas(self, bg="gray20")
         self.radius = radius
@@ -12,7 +12,7 @@ class LoadingAnimation(CTkFrame):
         self.angle = 0
         self.running = True
         
-        self.text_label = CTkLabel(self,text="",fg_color="transparent", bg_color="gray20",font=("Arial", 15, "bold"),)
+        self.text_label = CTkLabel(self,text="",fg_color="transparent", bg_color="gray20",font=("Arial", font_size, "bold"),)
         self.text_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
         
         self.canvas.pack()

@@ -20,7 +20,7 @@ class HomeFrame(CTkFrame):
         self.stop_event = Event()
         self.init_ui()      
         self.after(5000,self.auto_start)
-
+        
     def init_ui(self):
         # Load images
         self.logo2_image = CTkImage(
@@ -80,7 +80,7 @@ class HomeFrame(CTkFrame):
         
         # Frame as a container for label and combobox
         self.camera_selection_container = CTkLabel(self, text="", width=260)
-        self.camera_selection_container.place(relx=0.5, rely=0.68, anchor="center")
+        self.camera_selection_container.place(relx=0.5, rely=0.58, anchor="center")
 
         # ComboBox for camera selection inside the container
         self.camera_selection = CTkComboBox(
@@ -100,7 +100,15 @@ class HomeFrame(CTkFrame):
             font=("Arial", 20, "bold"),
         )
         self.camera_selection_label.place(x=80, y=0)
-
+        
+        self.checkbox_audio = CTkCheckBox(
+            self,
+            command=lambda: self.save_choice(),
+            text="   Audio                ",
+            font=("Arial", 20, "bold"),
+        )
+        self.checkbox_audio.place(relx=0.5, rely=0.68, anchor="center")
+        
         self.checkbox_auto_start = CTkCheckBox(
             self,
             command=lambda: self.save_choice(),
@@ -139,20 +147,18 @@ class HomeFrame(CTkFrame):
     # Utility Functions
     def save_choice(self, *args):
         choice = [
-            self.camera_selection.get(),
+            int(self.camera_selection.get()),
+            self.checkbox_audio.get(),
             self.checkbox_auto_start.get(),
-            self.get_choice()[2]
         ]
         update_choice(choice)
 
-    def get_choice(self):
-        config = get_config()
-        return config["choice"]
-
     def load_previous_choices(self):
-        choices = self.get_choice()
-        self.camera_selection.set(choices[0])
-        if choices[1]:
+        config = get_config()
+        self.camera_selection.set(config["camera_choice"])
+        if config["audio_choice"]:
+            self.checkbox_audio.select()
+        if config["auto_start"]:
             self.checkbox_auto_start.select()
     
     def process_for_folder(self,folder):
@@ -166,69 +172,58 @@ class HomeFrame(CTkFrame):
             if type(widget) == CTkButton:
                 widget.configure(state=DISABLED)
         
-        loading_animation = LoadingAnimation(self.parent)
+        self.loading_animation = LoadingAnimation(self.parent, radius=90)
         students_face_data = self.get_student_encodings()
         total = len(students_face_data)
         max_processes = os.cpu_count()
-        for index,data in enumerate(students_face_data.items()):
+        for index,profile in enumerate(students_face_data):
             try:
                 time.sleep(0.05)
-                
-                loading_animation.change_text(f"{max_processes}\nstudent\n{index+1}/{total}")
-                id = data[0]
-                if data[1] == None:
+                self.loading_animation.change_text(f"{max_processes}\nstudent\n{index+1}/{total}")
+                id = profile[0]
+                if profile[2] == None:
                     folder = "./Student_face/" + id
                     encodings = self.process_for_folder(folder)
                     self.save_student_encodings(id,encodings)
+                    temp = list(profile)
+                    temp[2] = pickle.dumps(encodings)
+                    students_face_data[index] = temp
             except FileNotFoundError:
                 showwarning("Warning", f"Missing folder for {id}")
         
         staff_face_data = self.get_staff_encodings()
         total = len(staff_face_data)
-        for index,data in enumerate(staff_face_data.items()):
+        for index,profile in enumerate(staff_face_data):
             try:
                 time.sleep(0.05)
-                loading_animation.change_text(f"{max_processes}\nstaff_face\n{index+1}/{total}")
-                id = data[0]
-                if data[1] == None:
+                self.loading_animation.change_text(f"{max_processes}\nstaff_face\n{index+1}/{total}")
+                id = profile[0]
+                if profile[2] == None:
                     folder = "./Staff_face/" + id
                     encodings = self.process_for_folder(folder)
                     self.save_staff_encodings(id,encodings)
+                    temp = list(profile)
+                    temp[2] = pickle.dumps(encodings)
+                    staff_face_data[index] = temp
             except FileNotFoundError:
                 showwarning("Warning", f"Missing folder for {id}")
                 
-        loading_animation.change_text(f"Saving Data")
-        self.save_encodinds_locally()
+        self.loading_animation.change_text(f"Saving Data")
+        self.save_encodings_locally(students_face_data + staff_face_data)
         time.sleep(2)
-        loading_animation.stop()
+        self.loading_animation.stop()
         for widget in self.winfo_children():
             if type(widget) == CTkButton:
                 widget.configure(state=NORMAL)
     
-    def save_encodinds_locally(self):
-        data = []
-        profiles = self.db.fetch_data("""
-SELECT
-    ID,
-    Name,
-    Encoding, 
-    'student' as Role 
-FROM
-    student_face 
-UNION ALL 
-SELECT 
-    ID, 
-    Name, 
-    Encoding, 
-    'staff' as Role 
-FROM
-    staff_face;""")
-        for profile in profiles:
+    def save_encodings_locally(self, all_profiles):
+        filter_data = []
+        for profile in all_profiles:
             if profile[2] is not None:
                 id, name, encoding, role = profile[0], profile[1], pickle.loads(profile[2]), profile[3]
-                data.append((id, name, encoding, role))
+                filter_data.append((id, name, encoding, role))
         with open('face_data.pkl', 'wb') as file:
-            pickle.dump(data, file)
+            pickle.dump(filter_data, file)
     
     def save_student_encodings(self,id,encodings):
         binary_encoding = pickle.dumps(encodings)
@@ -239,11 +234,51 @@ FROM
         self.db.execute_query("UPDATE staff_face SET Encoding=%s WHERE ID=%s;", (binary_encoding, id))
         
     
-    def get_student_encodings(self):
-        return dict(self.db.fetch_data("SELECT ID,Encoding from student_face;"))
+    def get_student_encodings(self) -> list[tuple]:
+        data = []
+        chunk_size = 10  # Rows per chunk
+        offset = 0
+        # Assume these methods return the total row count for each table
+        total_rows = self.db.fetch_data("SELECT COUNT(*) FROM student_face")[0][0]
+        while offset < total_rows:
+            self.loading_animation.change_text(f"Fetching\nStudent Data\n{offset}/{total_rows}")
+            # Fetch a chunk from the student_face table
+            student_profiles = self.db.fetch_data(
+                f"""
+                SELECT ID, Name, Encoding, 'student' AS Role 
+                FROM student_face 
+                LIMIT {chunk_size} OFFSET {offset}
+                """
+            )
+            data += student_profiles
+            offset += chunk_size      
+        return data
     
-    def get_staff_encodings(self):
-        return dict(self.db.fetch_data("SELECT ID,Encoding from staff_face;"))
+    def get_staff_encodings(self) -> list[tuple]:
+        data = []
+        chunk_size = 10  # Rows per chunk
+        offset = 0
+
+        # Assume these methods return the total row count for each table
+        total_rows = self.db.fetch_data("SELECT COUNT(*) FROM staff_face")[0][0]
+        now = 0
+        while offset < total_rows:
+            now += chunk_size
+            if now > total_rows:
+                now = total_rows
+            self.loading_animation.change_text(f"Fetching\nStaff Data\n{offset}/{total_rows}")
+            
+            # Fetch a chunk from the staff_face table
+            staff_profiles = self.db.fetch_data(
+                f"""
+                SELECT ID, Name, Encoding, 'staff' AS Role 
+                FROM staff_face 
+                LIMIT {chunk_size} OFFSET {offset}
+                """
+            )
+            data += staff_profiles
+            offset += chunk_size
+        return data
     
     @staticmethod
     def get_face_encoding(image_path):

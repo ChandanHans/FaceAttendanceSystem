@@ -15,14 +15,14 @@ config_path = 'config.json'
 def is_valid_config(data):
     # Define the keys you expect in the configuration and their types
     expected_keys = {
-        "choice": list,
+        "camera_choice": int,
+        "audio_choice": int,
+        "auto_start": int,
+        "camera_ip": str,
         "scale": float,
         "max_checkin": str,
         "min_checkout": str,
-        "host": str,
-        "user": str,
-        "passwd": str,
-        "db": str
+        "db_connection": dict
     }
     # Check if all keys exist and have the correct type
     for key, expected_type in expected_keys.items():
@@ -46,18 +46,19 @@ def get_config():
             showwarning("Warning", "Configuration file not found. A sample config will be created. Please fill it out.")
             # Create a sample configuration file
             sample_data = {
-                "choice": [
-                    "0",
-                    0,
-                    "rtsp://id:pass@ip:port"
-                ],
+                "camera_choice": 0,
+                "audio_choice": 0,
+                "auto_start": 0,
+                "camera_ip": "rtsp://id:password@ip:554",
                 "scale": 0.7,
                 "max_checkin": "09:30:00",
                 "min_checkout": "13:30:00",
-                "host": "",
-                "user": "",
-                "passwd": "",
-                "db": ""
+                "db_connection": {
+                    "host": "",
+                    "user": "",
+                    "passwd": "",
+                    "db": ""
+                }
             }
             with open(config_path, 'w') as file:
                 json.dump(sample_data, file, indent=4)
@@ -71,7 +72,9 @@ def update_choice(new_choice):
         config = json.load(file)
 
     # Update the CHOICE value
-    config["choice"] = new_choice
+    config["camera_choice"] = new_choice[0]
+    config["audio_choice"] = new_choice[1]
+    config["auto_start"] = new_choice[2]
 
     # Write the updated configuration back to the file
     with open(config_path, 'w') as file:

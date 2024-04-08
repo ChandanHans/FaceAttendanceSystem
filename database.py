@@ -2,16 +2,15 @@ import mysql.connector
 import logging
 from utility import get_config
 
-config = get_config()
-
+db_connection = get_config()["db_connection"]
 
 class Database:
     def __init__(
         self,
-        host=config["host"],
-        user=config["user"],
-        passwd=config["passwd"],
-        database=config["db"],
+        host = db_connection["host"],
+        user = db_connection["user"],
+        passwd = db_connection["passwd"],
+        database = db_connection["db"],
         wait_timeout=28800,
         interactive_timeout=28800,
     ):

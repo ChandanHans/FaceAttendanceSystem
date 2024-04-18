@@ -267,9 +267,16 @@ GROUP BY
 
     def set_date_range(self):
         self.recent_date = datetime.date(datetime.now())
-        self.oldest_date = self.db.fetch_data("SELECT MIN(Date) from attendance")[0][0]
-        if not self.oldest_date:
-            self.oldest_date = self.recent_date
+        self.oldest_date = self.recent_date
+        self.oldest_date1 = self.db.fetch_data("SELECT MIN(Date) from student_attendance")[0][0]
+        self.oldest_date2 = self.db.fetch_data("SELECT MIN(Date) from staff_attendance")[0][0]
+
+        if self.oldest_date1 and self.oldest_date2:
+            self.oldest_date = min(self.oldest_date1,self.oldest_date2)
+        elif self.oldest_date1:
+            self.oldest_date = self.oldest_date1
+        else:
+            self.oldest_date = self.oldest_date2
 
     def set_default_date(self):
         self.set_date_range()

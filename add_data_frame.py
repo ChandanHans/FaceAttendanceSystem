@@ -134,9 +134,9 @@ class AskDataFrame(CTkFrame):
         )
         self.submit_button.place(relx=0.7, rely=0.87, anchor="center")
 
-        self.ok_logo = CTkImage(Image.open(resource_path("src/ok.png")), size=(30, 30))
+        self.ok_logo = CTkImage(Image.open(resource_path("assets/ok.png")), size=(30, 30))
         self.cancel_logo = CTkImage(
-            Image.open(resource_path("src/cancel.png")), size=(30, 30)
+            Image.open(resource_path("assets/cancel.png")), size=(30, 30)
         )
         self.ask_student()
 
@@ -386,11 +386,11 @@ class TableFrame(CTkFrame):
         super().__init__(parent, **kwargs)
         self.db = db
         self.trash_logo = CTkImage(
-            Image.open(resource_path("src/delete.png")), size=(30, 30)
+            Image.open(resource_path("assets/delete.png")), size=(30, 30)
         )
-        self.up_logo = CTkImage(Image.open(resource_path("src/up.png")), size=(20, 20))
+        self.up_logo = CTkImage(Image.open(resource_path("assets/up.png")), size=(20, 20))
         self.down_logo = CTkImage(
-            Image.open(resource_path("src/down.png")), size=(20, 20)
+            Image.open(resource_path("assets/down.png")), size=(20, 20)
         )
         self.configure(border_width=4, border_color="#5665EF", corner_radius=0)
         self.create_widgets()

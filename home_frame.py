@@ -24,11 +24,11 @@ class HomeFrame(CTkFrame):
     def init_ui(self):
         # Load images
         self.logo2_image = CTkImage(
-            Image.open(resource_path("src/add-user.png")), size=(40, 40)
+            Image.open(resource_path("assets/add-user.png")), size=(40, 40)
         )
-        self.logo3_image = CTkImage(Image.open(resource_path("src/list.png")), size=(40, 40))
-        self.logo4_image = CTkImage(Image.open(resource_path("src/face-id.png")), size=(40, 40))
-        self.logo5_image = CTkImage(Image.open(resource_path("src/binary-file.png")), size=(40, 40))
+        self.logo3_image = CTkImage(Image.open(resource_path("assets/list.png")), size=(40, 40))
+        self.logo4_image = CTkImage(Image.open(resource_path("assets/face-id.png")), size=(40, 40))
+        self.logo5_image = CTkImage(Image.open(resource_path("assets/binary-file.png")), size=(40, 40))
 
         self.button_add_student = CTkButton(
             self,

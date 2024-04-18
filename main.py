@@ -19,7 +19,7 @@ class FaceAttendanceSystem(CTk):
         super().__init__()
         self.connect_db()
         self.title("FaceAttendanceSystem")
-        self.iconbitmap(resource_path("src/logo.ico"))
+        self.iconbitmap(resource_path("assets/logo.ico"))
         self.minsize(900, 600)
         self.create_widgets()
         self.after(100, self.show_home_frame)
@@ -32,10 +32,10 @@ class FaceAttendanceSystem(CTk):
 
     def create_widgets(self):
         self.logo1_image = CTkImage(
-            Image.open(resource_path("src/checked-user.png")), size=(50, 50)
+            Image.open(resource_path("assets/checked-user.png")), size=(50, 50)
         )
         self.back_button_image = CTkImage(
-            Image.open(resource_path("src/back.png")), size=(50, 50)
+            Image.open(resource_path("assets/back.png")), size=(50, 50)
         )
         self.title_label = CTkLabel(
             master=self,

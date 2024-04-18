@@ -16,7 +16,7 @@ class DataFrame(CTkFrame):
         self.db = db
         self.date_picker_opened = False
         self.download_logo = CTkImage(
-            Image.open(resource_path("src/download.png")), size=(30, 30)
+            Image.open(resource_path("assets/download.png")), size=(30, 30)
         )
         self.configure(border_width=4, border_color="#5665EF", corner_radius=0)
         self.create_filter_frame()

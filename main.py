@@ -7,7 +7,6 @@ from home_frame import HomeFrame
 from data_frame import DataFrame
 from add_data_frame import AddDataFrame
 from multiprocessing import freeze_support
-import tkinter as tk
 
 from utility import *
 
